@@ -1,0 +1,5 @@
+.DS_Store
+lcd-panel/#auto_saved_files#
+lcd-panel/*-backups/
+lcd-panel/*.lck
+lcd-panel/*.kicad_prl
