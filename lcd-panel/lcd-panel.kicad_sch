@@ -3286,6 +3286,453 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Power_Protection:USBLC6-2SC6"
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at 0.635 5.715 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "USBLC6-2SC6"
+				(at 0.635 3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23-6"
+				(at 1.27 -6.35 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
+				(at 1.27 -8.255 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-23-6"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "usb ethernet video"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SOT?23*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "USBLC6-2SC6_0_0"
+				(circle
+					(center -1.524 0)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -0.508 2.032)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -0.508 -4.572)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0.508 2.032)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0.508 -4.572)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 1.524 -2.54)
+					(radius 0.0001)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "USBLC6-2SC6_0_1"
+				(polyline
+					(pts
+						(xy -2.54 0) (xy 2.54 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -2.54) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.032 0.508) (xy -1.016 0.508) (xy -1.524 1.524) (xy -2.032 0.508)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.032 -3.048) (xy -1.016 -3.048)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.016 1.524) (xy -2.032 1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.016 -4.064) (xy -2.032 -4.064) (xy -1.524 -3.048) (xy -1.016 -4.064)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.508 -1.143) (xy -0.508 -0.762) (xy 0.508 -0.762)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy -0.508 2.032) (xy 0.508 2.032) (xy 0 1.524) (xy 0 -4.064) (xy -0.508 -4.572) (xy 0.508 -4.572)
+						(xy 0 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.508 -1.778) (xy -0.508 -1.778) (xy 0 -0.762) (xy 0.508 -1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.016 1.524) (xy 2.032 1.524)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.016 -3.048) (xy 2.032 -3.048)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.032 0.508) (xy 1.016 0.508) (xy 1.524 1.524) (xy 2.032 0.508)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.032 -4.064) (xy 1.016 -4.064) (xy 1.524 -3.048) (xy 2.032 -4.064)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "USBLC6-2SC6_1_1"
+				(rectangle
+					(start -2.54 2.794)
+					(end 2.54 -5.334)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.508 2.032) (xy -1.524 2.032) (xy -1.524 -4.572) (xy -0.508 -4.572)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.508 -4.572) (xy 1.524 -4.572) (xy 1.524 2.032) (xy 0.508 2.032)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "I/O1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 2.54)
+					(name "I/O2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 5.08 270)
+					(length 2.54)
+					(name "VBUS"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 2.54)
+					(name "I/O1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 -2.54 180)
+					(length 2.54)
+					(name "I/O2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Transistor_FET:AO3400A"
 			(pin_names
 				(offset 0)
@@ -3937,6 +4384,16 @@
 			(embedded_fonts no)
 		)
 	)
+	(text "JST 0.5mm socket to USB-A cable"
+		(exclude_from_sim no)
+		(at 37.592 22.098 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "06a179e0-116a-45a7-8ce5-43f332af7b91")
+	)
 	(junction
 		(at 250.19 113.03)
 		(diameter 0)
@@ -3962,10 +4419,22 @@
 		(uuid "48e6f4e8-89cb-4142-a715-8e9b6d7637fc")
 	)
 	(junction
+		(at 153.67 30.48)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "533d8709-d680-41f7-a369-3897a99c88c9")
+	)
+	(junction
 		(at 247.65 140.97)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "5a2a2bc6-f32e-4341-8617-fc7f8b9dfa67")
+	)
+	(junction
+		(at 156.21 30.48)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6e781136-e22e-4f1b-90a2-f82f7497ecbc")
 	)
 	(junction
 		(at 43.18 67.31)
@@ -4025,6 +4494,16 @@
 	)
 	(wire
 		(pts
+			(xy 153.67 30.48) (xy 156.21 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "34bafc6d-7d48-4d7b-8e7a-401ff2ddd82e")
+	)
+	(wire
+		(pts
 			(xy 254 118.11) (xy 260.35 118.11)
 		)
 		(stroke
@@ -4045,7 +4524,7 @@
 	)
 	(wire
 		(pts
-			(xy 132.08 29.21) (xy 132.08 34.29)
+			(xy 153.67 25.4) (xy 153.67 30.48)
 		)
 		(stroke
 			(width 0)
@@ -4145,6 +4624,16 @@
 	)
 	(wire
 		(pts
+			(xy 156.21 30.48) (xy 158.75 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a28323d6-485c-4735-8477-b4781e3c0736")
+	)
+	(wire
+		(pts
 			(xy 260.35 118.11) (xy 260.35 121.92)
 		)
 		(stroke
@@ -4213,9 +4702,31 @@
 		)
 		(uuid "eeb8b227-8fd8-48f1-9196-5eae4ab8f177")
 	)
-	(global_label "LCD_BL"
+	(global_label "USB_D-"
 		(shape input)
-		(at 154.94 57.15 0)
+		(at 83.82 67.31 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "280b1100-6b5e-4927-a419-2d0fa488a884")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 73.2148 67.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "D-"
+		(shape input)
+		(at 93.98 67.31 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4223,9 +4734,9 @@
 			)
 			(justify left)
 		)
-		(uuid "2da8b506-f53f-4fc9-88ee-f31f130f8a92")
+		(uuid "2a584720-107d-4a46-94f9-38937063e4ce")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 164.759 57.15 0)
+			(at 99.8076 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4235,7 +4746,29 @@
 			)
 		)
 	)
-	(global_label "D-"
+	(global_label "LCD_BL"
+		(shape input)
+		(at 176.53 53.34 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2da8b506-f53f-4fc9-88ee-f31f130f8a92")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 186.349 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "USB_D-"
 		(shape input)
 		(at 33.02 31.75 180)
 		(fields_autoplaced yes)
@@ -4247,7 +4780,7 @@
 		)
 		(uuid "2ffdc1bc-90d6-4ab9-8f99-abbe48543bf6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 27.1924 31.75 0)
+			(at 22.4148 31.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4281,7 +4814,7 @@
 	)
 	(global_label "FAN TACH"
 		(shape input)
-		(at 154.94 64.77 0)
+		(at 176.53 60.96 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4291,7 +4824,7 @@
 		)
 		(uuid "4e40fca9-5f9b-4a2d-99cd-0155e033ce7e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 167.0572 64.77 0)
+			(at 188.6472 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4303,7 +4836,7 @@
 	)
 	(global_label "LCD_SCK"
 		(shape input)
-		(at 154.94 44.45 0)
+		(at 176.53 40.64 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4313,7 +4846,7 @@
 		)
 		(uuid "4ebf52e3-fcdf-4bde-8f1d-cf475d2b4eea")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 166.2104 44.45 0)
+			(at 187.8004 40.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4391,7 +4924,7 @@
 	)
 	(global_label "LCD_DC"
 		(shape input)
-		(at 154.94 46.99 0)
+		(at 176.53 43.18 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4401,7 +4934,7 @@
 		)
 		(uuid "5c80b645-199c-44e3-b9e8-a9d614eb2695")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 165.0009 46.99 0)
+			(at 186.5909 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4435,7 +4968,7 @@
 	)
 	(global_label "LCD_NS"
 		(shape input)
-		(at 154.94 54.61 0)
+		(at 176.53 50.8 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4445,7 +4978,7 @@
 		)
 		(uuid "772c0e15-2710-4c3d-9319-3e562f04fadf")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 165.0009 54.61 0)
+			(at 186.5909 50.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4457,7 +4990,7 @@
 	)
 	(global_label "LCD_MOSI"
 		(shape input)
-		(at 154.94 41.91 0)
+		(at 176.53 38.1 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4467,7 +5000,7 @@
 		)
 		(uuid "83f95a5f-25b6-4f48-bf51-4451dc7e8ac8")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 167.0571 41.91 0)
+			(at 188.6471 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4501,7 +5034,7 @@
 	)
 	(global_label "LCD_CS"
 		(shape input)
-		(at 154.94 52.07 0)
+		(at 176.53 48.26 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4511,7 +5044,7 @@
 		)
 		(uuid "8b2de9d5-08ef-40e3-b233-b0ae273c7b45")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 164.9404 52.07 0)
+			(at 186.5304 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4567,7 +5100,7 @@
 	)
 	(global_label "D+"
 		(shape input)
-		(at 109.22 59.69 180)
+		(at 130.81 55.88 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4577,7 +5110,7 @@
 		)
 		(uuid "a93303dd-8839-4beb-9ff5-6d9619af76d5")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 103.3924 59.69 0)
+			(at 124.9824 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4589,7 +5122,7 @@
 	)
 	(global_label "LCD_RST"
 		(shape input)
-		(at 154.94 49.53 0)
+		(at 176.53 45.72 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4599,12 +5132,34 @@
 		)
 		(uuid "aacbdf15-99e5-4e9a-8c4f-101f66d31c7a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 165.908 49.53 0)
+			(at 187.498 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "USB_D+"
+		(shape input)
+		(at 83.82 69.85 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "b83017ee-f68d-4924-8d76-b5890f9d2d3f")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 73.2148 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -4633,7 +5188,7 @@
 	)
 	(global_label "FAN GATE"
 		(shape input)
-		(at 154.94 59.69 0)
+		(at 176.53 55.88 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4643,7 +5198,7 @@
 		)
 		(uuid "d20fdc8f-a149-45b2-8b75-ec83e5090233")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 166.8757 59.69 0)
+			(at 188.4657 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4677,7 +5232,7 @@
 	)
 	(global_label "D-"
 		(shape input)
-		(at 109.22 57.15 180)
+		(at 130.81 53.34 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4687,7 +5242,7 @@
 		)
 		(uuid "de1fc342-9b51-419f-bd48-b1c3bf0e312c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 103.3924 57.15 0)
+			(at 124.9824 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4715,6 +5270,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "D+"
+		(shape input)
+		(at 93.98 69.85 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "ed06ba15-2b4b-429a-ab60-db0af88ef645")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 99.8076 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -4875,7 +5452,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C2474"
+		(property "LCSC" "C2480"
 			(at 260.35 125.73 90)
 			(effects
 				(font
@@ -5116,6 +5693,157 @@
 			(project "lcd-panel"
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
 					(reference "C6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Power_Protection:USBLC6-2SC6")
+		(at 88.9 67.31 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1bd5bff5-362e-47c2-aeec-d985fbe92672")
+		(property "Reference" "U3"
+			(at 90.5511 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "USBLC6-2SC6"
+			(at 90.5511 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-6"
+			(at 90.17 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
+			(at 90.17 75.565 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-23-6"
+			(at 88.9 67.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "6"
+			(uuid "7be06cf8-b8bf-46e7-b24f-408a23f9c66f")
+		)
+		(pin "4"
+			(uuid "3136a3ef-3e2b-4029-a514-f0f71d2533f1")
+		)
+		(pin "2"
+			(uuid "ce2880b0-cd8a-49c2-a93d-b8d41fbfcd35")
+		)
+		(pin "5"
+			(uuid "0dbbbf24-ae5b-4f42-9174-fb7148a2b1cf")
+		)
+		(pin "3"
+			(uuid "1aa69325-df44-4913-a74a-07d5a83c6dba")
+		)
+		(pin "1"
+			(uuid "06d6cb83-c8f2-43d8-a9cf-4902a0d4b34e")
+		)
+		(instances
+			(project ""
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "U3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 88.9 62.23 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "1c64bf23-3050-48e6-a1f6-0bd828e765bc")
+		(property "Reference" "#PWR012"
+			(at 88.9 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 88.9 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 88.9 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 88.9 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "81a81e7a-8440-4ab9-8bb4-8415328dd473")
+		)
+		(instances
+			(project "lcd-panel"
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "#PWR012")
 					(unit 1)
 				)
 			)
@@ -5401,7 +6129,7 @@
 	)
 	(symbol
 		(lib_id "Interface_USB:FT232H")
-		(at 132.08 72.39 0)
+		(at 153.67 68.58 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5409,7 +6137,7 @@
 		(dnp no)
 		(uuid "34b61252-8fe0-4456-8dbb-ee2de5b5fe91")
 		(property "Reference" "U1"
-			(at 143.002 31.496 0)
+			(at 164.592 27.686 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5417,8 +6145,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "FT232H"
-			(at 143.002 34.036 0)
+		(property "Value" "FT232HL-REEL"
+			(at 164.592 30.226 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5426,8 +6154,8 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_DFN_QFN:QFN-48-1EP_7x7mm_P0.5mm_EP5.15x5.15mm"
-			(at 132.08 72.39 0)
+		(property "Footprint" "Package_QFP:LQFP-48_7x7mm_P0.5mm"
+			(at 153.67 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5436,7 +6164,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT232H.pdf"
-			(at 132.08 72.39 0)
+			(at 153.67 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5445,7 +6173,7 @@
 			)
 		)
 		(property "Description" "Hi Speed Single Channel USB UART/FIFO, LQFP/QFN-48"
-			(at 132.08 72.39 0)
+			(at 153.67 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5453,8 +6181,8 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C14953"
-			(at 132.08 72.39 0)
+		(property "LCSC" "C51997"
+			(at 153.67 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6054,7 +6782,7 @@
 				)
 			)
 		)
-		(property "Value" "12.000 MHz"
+		(property "Value" "12 MHz, 20 pF load, ±10 ppm"
 			(at 58.42 100.2598 0)
 			(effects
 				(font
@@ -6089,7 +6817,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C13738"
+		(property "LCSC" "C9002"
 			(at 48.26 104.14 0)
 			(effects
 				(font
@@ -6186,6 +6914,73 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+3V3")
+		(at 130.81 43.18 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "71950610-cdbb-454d-92b9-9f8c67a1bbd0")
+		(property "Reference" "#PWR013"
+			(at 134.62 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 127 43.1799 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 130.81 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 130.81 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 130.81 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b0ef6afc-885a-4a65-8090-b35758bc3a89")
+		)
+		(instances
+			(project "lcd-panel"
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "#PWR013")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "PCM_Capacitor_US_AKL:C_Generic")
 		(at 25.4 134.62 0)
 		(unit 1)
@@ -6204,7 +6999,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "27pF"
+		(property "Value" "33 pF 50V C0G"
 			(at 29.21 135.8899 0)
 			(effects
 				(font
@@ -6240,7 +7035,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C1524"
+		(property "LCSC" "C1562"
 			(at 25.4 134.62 0)
 			(effects
 				(font
@@ -6368,7 +7163,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10µF 10V"
+		(property "Value" "10 µF 10V X5R"
 			(at 29.21 121.0309 0)
 			(effects
 				(font
@@ -6593,8 +7388,87 @@
 		)
 	)
 	(symbol
+		(lib_id "PCM_Capacitor_US_AKL:C_Generic")
+		(at 48.26 134.62 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "94f800ae-4005-44de-a286-b17ec22ea181")
+		(property "Reference" "C3"
+			(at 52.07 133.3499 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "33 pF 50V C0G"
+			(at 52.07 135.8899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 49.2252 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 48.26 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, Generic Symbol, Alternate KiCad Library"
+			(at 48.26 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1562"
+			(at 48.26 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "a367a843-3120-4fc6-afa2-8fe443f74015")
+		)
+		(pin "1"
+			(uuid "11069e08-4eef-4da2-93b2-17cd507c1c99")
+		)
+		(instances
+			(project "lcd-panel"
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "C3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3V3")
-		(at 132.08 29.21 0)
+		(at 153.67 25.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6603,7 +7477,7 @@
 		(fields_autoplaced yes)
 		(uuid "9e97a785-ca93-4890-8976-84d0ebd7e545")
 		(property "Reference" "#PWR01"
-			(at 132.08 33.02 0)
+			(at 153.67 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6612,7 +7486,7 @@
 			)
 		)
 		(property "Value" "+3V3"
-			(at 132.08 24.13 0)
+			(at 153.67 20.32 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6620,7 +7494,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 132.08 29.21 0)
+			(at 153.67 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6629,7 +7503,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 132.08 29.21 0)
+			(at 153.67 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6638,7 +7512,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 132.08 29.21 0)
+			(at 153.67 25.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6653,6 +7527,72 @@
 			(project ""
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
 					(reference "#PWR01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 88.9 74.93 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "9edeb1f4-ab1c-4c18-a6d5-4637254d7726")
+		(property "Reference" "#PWR011"
+			(at 88.9 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 88.9 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 88.9 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e31aec5f-3511-4d45-b95d-4724e23a82de")
+		)
+		(instances
+			(project "lcd-panel"
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "#PWR011")
 					(unit 1)
 				)
 			)
@@ -6730,85 +7670,6 @@
 			(project "lcd-panel"
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
 					(reference "R2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "PCM_Capacitor_US_AKL:C_Generic")
-		(at 48.26 134.62 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "a81528c9-1f79-4e1f-aa74-6b92c7d7f8e0")
-		(property "Reference" "C3"
-			(at 52.07 133.3499 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "27pF"
-			(at 52.07 135.8899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 49.2252 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 48.26 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Unpolarized capacitor, Generic Symbol, Alternate KiCad Library"
-			(at 48.26 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "LCSC" "C1524"
-			(at 48.26 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "ede7c970-4f80-4e21-8ffe-995279317e88")
-		)
-		(pin "1"
-			(uuid "523ce0bb-3c6b-433c-8454-a066bfaddbde")
-		)
-		(instances
-			(project "lcd-panel"
-				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
-					(reference "C3")
 					(unit 1)
 				)
 			)
@@ -7113,7 +7974,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C1015"
+		(property "LCSC" "C96708"
 			(at 39.37 67.31 0)
 			(effects
 				(font
@@ -7269,7 +8130,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C25782"
+		(property "LCSC" "C25752"
 			(at 119.38 166.37 90)
 			(effects
 				(font
@@ -7378,7 +8239,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4.7µF 10V"
+		(property "Value" "4.7 µF 16V X5R"
 			(at 52.07 121.0309 0)
 			(effects
 				(font
