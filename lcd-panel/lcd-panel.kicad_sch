@@ -5644,9 +5644,9 @@
 			)
 		)
 	)
-	(global_label "LCD_SCK"
+	(global_label "LCD_DC"
 		(shape input)
-		(at 179.07 62.23 0)
+		(at 179.07 77.47 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5654,9 +5654,9 @@
 			)
 			(justify left)
 		)
-		(uuid "0ef0d3f2-0442-4e6a-b9a2-ccb87c88bf8c")
+		(uuid "10b4f5f1-93d7-4e80-af6f-1dffb7168870")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 190.3404 62.23 0)
+			(at 189.1309 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5684,6 +5684,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LCD_RST"
+		(shape input)
+		(at 179.07 74.93 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "29345c97-5370-4be6-9b18-a6ea49e06d2e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 190.038 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LCD_CS"
+		(shape input)
+		(at 179.07 69.85 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "29a4d341-c6e3-4ef7-8299-328f18dd3b1d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 189.0704 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -5776,28 +5820,6 @@
 			)
 		)
 	)
-	(global_label "LCD_MOSI"
-		(shape input)
-		(at 179.07 64.77 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "488d2069-16f3-4102-8f35-a860f0fe5ff8")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 191.1871 64.77 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "VBUS"
 		(shape input)
 		(at 38.1 69.85 180)
@@ -5864,9 +5886,9 @@
 			)
 		)
 	)
-	(global_label "FAN TACH"
+	(global_label "LCD_MOSI"
 		(shape input)
-		(at 179.07 85.09 0)
+		(at 179.07 64.77 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5874,31 +5896,9 @@
 			)
 			(justify left)
 		)
-		(uuid "5fdb51c0-7aaa-4b6a-9813-6486f31e4294")
+		(uuid "63e0d73d-c93b-4688-9b8f-280f3f732e54")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 191.1872 85.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "LCD_CS"
-		(shape input)
-		(at 179.07 69.85 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "6894cb5f-3a41-4f01-9991-452fb86ebac7")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 189.0704 69.85 0)
+			(at 191.1871 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5976,28 +5976,6 @@
 	)
 	(global_label "LCD_DC"
 		(shape input)
-		(at 179.07 72.39 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "877889cb-504b-421b-8117-4f524b5a858a")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 189.1309 72.39 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "LCD_DC"
-		(shape input)
 		(at 237.49 45.72 180)
 		(fields_autoplaced yes)
 		(effects
@@ -6014,6 +5992,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LCD_BL"
+		(shape input)
+		(at 179.07 72.39 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "888fc328-9b44-40e0-a591-c17cc7d6e51f")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 188.889 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "FAN TACH"
+		(shape input)
+		(at 179.07 87.63 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8e66d75d-fec3-43d7-902d-0d182ab9acbc")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 191.1872 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -6106,50 +6128,6 @@
 			)
 		)
 	)
-	(global_label "LCD_RST"
-		(shape input)
-		(at 179.07 74.93 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b699218c-5bcf-480a-a80a-f77f765275b2")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 190.038 74.93 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "LCD_BL"
-		(shape input)
-		(at 179.07 77.47 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b819f33d-f0a9-4473-b712-db5be8e28ddd")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 188.889 77.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "USB_D+"
 		(shape input)
 		(at 40.64 102.87 180)
@@ -6212,6 +6190,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LCD_SCK"
+		(shape input)
+		(at 179.07 62.23 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cdb67def-8013-4378-a5f0-7199bfbda0ef")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 190.3404 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "FAN GATE"
+		(shape input)
+		(at 179.07 80.01 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d961094a-bb58-4f0e-8054-e34a283bc108")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 191.0057 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -6295,28 +6317,6 @@
 		(uuid "ed06ba15-2b4b-429a-ab60-db0af88ef645")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 56.6276 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "FAN GATE"
-		(shape input)
-		(at 179.07 80.01 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "f63e233f-0910-4933-81ed-5db5101843f2")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 191.0057 80.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7233,6 +7233,73 @@
 			(project "lcd-panel"
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
 					(reference "#PWR07")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 240.03 116.84 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2889a2af-f24e-407a-b47f-a468a908d411")
+		(property "Reference" "#PWR09"
+			(at 246.38 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 243.84 116.8399 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 240.03 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 240.03 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 240.03 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1800a0ff-fcaf-4057-8d19-4da6c1a1b644")
+		)
+		(instances
+			(project "lcd-panel"
+				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
+					(reference "#PWR09")
 					(unit 1)
 				)
 			)
