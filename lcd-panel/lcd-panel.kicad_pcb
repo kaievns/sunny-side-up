@@ -1631,7 +1631,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25879"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6394,7 +6394,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C135111"
+		(property "LCSC" "C190271"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7606,6 +7606,19 @@
 			(effects
 				(font
 					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C7519"
+			(at 0 0 0)
+			(unlocked yes)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "5a42a8bd-64bd-48de-8790-23052768e8d5")
+			(effects
+				(font
+					(size 1 1)
 					(thickness 0.15)
 				)
 			)

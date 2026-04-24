@@ -3,3 +3,6 @@ lcd-panel/#auto_saved_files#
 lcd-panel/*-backups/
 lcd-panel/*.lck
 lcd-panel/*.kicad_prl
+lcd-panel/fabrication-toolkit-options.json
+lcd-panel/fp-info-cache
+lcd-panel/production/
