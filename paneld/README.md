@@ -56,8 +56,8 @@ cmd/bringup      the minimal hardware smoke test
 libftdi is linked via cgo, so you need it plus pkg-config:
 
 ```sh
-brew install libftdi pkg-config        # macOS
-# sudo apt install libftdi1-dev pkg-config   # Debian/Ubuntu
+brew install libftdi                   # macOS
+# sudo apt install libftdi1-dev        # Debian/Ubuntu
 
 make dev                                # -> bin/bringup
 make run                                # build + run against a plugged-in board
@@ -110,26 +110,34 @@ each — the panel is working either way.
 
 ## Deploying to the router (OpenWrt, NanoPi R5C / aarch64 / musl)
 
-The binary uses cgo, so a cross build needs a musl toolchain and the target's
-libftdi. On the router:
+The binary links libftdi1 via cgo, but cross-compiling needs **no OpenWrt SDK and
+no target headers**. We use [zig](https://ziglang.org) as a musl cross-compiler
+and link against a generated stub `libftdi1.so.2` (the real library is loaded on
+the router at runtime). One command:
 
 ```sh
-opkg update && opkg install libftdi1     # pulls libusb-1.0
+brew install zig      # once
+make router           # -> bin/paneld-arm64  (aarch64, musl, dynamically linked)
 ```
 
-Then cross-compile with **one** of the Makefile targets (see the Makefile for
-the required paths):
+`make router` runs `scripts/make-cross-libs.sh` to build the aarch64 stub, then
+cross-builds. The result depends only on `libftdi1.so.2` and the musl loader —
+verify with `file bin/paneld-arm64`.
+
+On the router, install the real library once and copy the binary over:
 
 ```sh
-# Path A: zig as the cross C compiler (no OpenWrt SDK needed on your Mac)
-brew install zig
-make router-zig SYSROOT=/path/to/aarch64-sysroot     # sysroot = router's /usr/{include,lib}
+# on the router:
+opkg update && opkg install libftdi1     # provides libftdi1.so.2 (+ libusb-1.0)
 
-# Path B: OpenWrt SDK toolchain (most reliable for OpenWrt)
-make router-sdk STAGING_DIR=... TOOLCHAIN=...
+# from your Mac:
+scp bin/paneld-arm64 root@ROUTER:/usr/bin/
+ssh root@ROUTER /usr/bin/paneld-arm64    # with the board plugged in
 ```
 
-`scp bin/bringup-arm64` to the router and run it with the board plugged in.
+If linking ever complains about the soname, or you want extra certainty, copy
+the router's real `libftdi1.so.2`/`libusb-1.0.so.0` into `sysroot/aarch64/` and
+re-run `make router` (see the note at the bottom of the Makefile).
 
 ## Roadmap (next, on the real hardware)
 

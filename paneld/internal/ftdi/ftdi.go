@@ -8,16 +8,34 @@
 //
 // Build requirements:
 //
-//	macOS dev:   brew install libftdi pkg-config
-//	OpenWrt:     opkg install libftdi1   (pulls libusb-1.0)
+//	macOS dev:   brew install libftdi     (links /opt/homebrew/lib/libftdi1.dylib)
+//	OpenWrt:     opkg install libftdi1     (provides libftdi1.so.2 + libusb at runtime)
+//	cross-build: make router               (zig cc + a generated stub libftdi1.so.2)
 //
-// libftdi is linked via pkg-config; see the Makefile for cross-compilation.
+// The cgo binding is deliberately header-free: we declare the few libftdi1
+// functions we use, so cross-compiling needs no target headers - only something
+// named libftdi1 to link against. See the Makefile 'router' target.
 package ftdi
 
 /*
-#cgo pkg-config: libftdi1
-#include <ftdi.h>
-#include <stdlib.h>
+#cgo darwin LDFLAGS: -L/opt/homebrew/lib -L/usr/local/lib -lftdi1
+#cgo linux  LDFLAGS: -lftdi1
+
+// Minimal libftdi1 API surface (cf. upstream <ftdi.h>). struct ftdi_context is
+// opaque here - we only ever hold a pointer to it, never touch its fields.
+struct ftdi_context;
+struct ftdi_context *ftdi_new(void);
+void  ftdi_free(struct ftdi_context *ftdi);
+int   ftdi_set_interface(struct ftdi_context *ftdi, int iface);
+int   ftdi_usb_open(struct ftdi_context *ftdi, int vendor, int product);
+int   ftdi_usb_close(struct ftdi_context *ftdi);
+int   ftdi_usb_reset(struct ftdi_context *ftdi);
+int   ftdi_set_latency_timer(struct ftdi_context *ftdi, unsigned char latency);
+int   ftdi_set_bitmode(struct ftdi_context *ftdi, unsigned char bitmask, unsigned char mode);
+int   ftdi_write_data(struct ftdi_context *ftdi, const unsigned char *buf, int size);
+int   ftdi_read_data(struct ftdi_context *ftdi, unsigned char *buf, int size);
+int   ftdi_tcioflush(struct ftdi_context *ftdi);
+char *ftdi_get_error_string(struct ftdi_context *ftdi);
 */
 import "C"
 
@@ -33,6 +51,14 @@ import (
 const (
 	DefaultVID = 0x0403
 	DefaultPID = 0x6014
+)
+
+// libftdi interface/mode values (from <ftdi.h>): INTERFACE_A, BITMODE_RESET,
+// BITMODE_MPSSE. Declared here since we don't include the header.
+const (
+	ifaceA       = 1
+	bitmodeReset = 0x00
+	bitmodeMPSSE = 0x02
 )
 
 // Device is an open FT232H in MPSSE mode. It is safe for concurrent use: the
@@ -71,7 +97,7 @@ func Open(vid, pid int) (*Device, error) {
 	// From here on every error path captures the libftdi diagnostic BEFORE
 	// Close frees the context (Close sets d.ctx = nil), so wrapErr never reads a
 	// freed/nil context and we don't leak the ftdi_new allocation.
-	if rc := C.ftdi_set_interface(ctx, C.INTERFACE_A); rc < 0 {
+	if rc := C.ftdi_set_interface(ctx, C.int(ifaceA)); rc < 0 {
 		err := d.wrapErr("ftdi_set_interface", rc)
 		d.Close()
 		return nil, err
@@ -98,7 +124,7 @@ func Open(vid, pid int) (*Device, error) {
 	}
 
 	// Reset the bit mode, flush, then enable MPSSE.
-	if rc := C.ftdi_set_bitmode(ctx, 0x00, C.BITMODE_RESET); rc < 0 {
+	if rc := C.ftdi_set_bitmode(ctx, C.uchar(0x00), C.uchar(bitmodeReset)); rc < 0 {
 		err := d.wrapErr("ftdi_set_bitmode(reset)", rc)
 		d.Close()
 		return nil, err
@@ -107,7 +133,7 @@ func Open(vid, pid int) (*Device, error) {
 		d.Close()
 		return nil, err
 	}
-	if rc := C.ftdi_set_bitmode(ctx, 0x00, C.BITMODE_MPSSE); rc < 0 {
+	if rc := C.ftdi_set_bitmode(ctx, C.uchar(0x00), C.uchar(bitmodeMPSSE)); rc < 0 {
 		err := d.wrapErr("ftdi_set_bitmode(mpsse)", rc)
 		d.Close()
 		return nil, err
