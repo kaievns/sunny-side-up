@@ -12,6 +12,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"image/color"
@@ -21,10 +22,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kaievns/sunny-side-up/paneld/internal/board"
 	"github.com/kaievns/sunny-side-up/paneld/internal/fan"
-	"github.com/kaievns/sunny-side-up/paneld/internal/ftdi"
 	"github.com/kaievns/sunny-side-up/paneld/internal/lcd"
+	"github.com/kaievns/sunny-side-up/paneld/internal/panel"
 )
 
 func main() {
@@ -34,96 +34,65 @@ func main() {
 	driveFan := flag.Bool("fan", true, "drive the fan on and measure its tachometer")
 	tachWin := flag.Duration("tach-window", time.Second, "tach measurement window")
 	rotate := flag.Int("rotate", 270, "display rotation: 0/180 portrait (142x428), 90/270 landscape (428x142)")
-	invert := flag.Bool("invert", true, "enable display inversion (set false if the image is a photo negative)")
+	invert := flag.Bool("invert", false, "display inversion (this panel wants it off; set true if the image is a photo negative)")
 	bgr := flag.Bool("bgr", false, "use BGR color order (set true if red and blue are swapped)")
 	flag.Parse()
 
-	opts := lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}
-	if err := run(*clockHz, *vid, *pid, *driveFan, *tachWin, opts); err != nil {
+	cfg := panel.Config{ClockHz: *clockHz, VID: *vid, PID: *pid, LCD: lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}}
+	if err := run(cfg, *driveFan, *tachWin); err != nil {
 		log.Fatalf("bringup: %v", err)
 	}
 }
 
-func run(clockHz, vid, pid int, driveFan bool, tachWin time.Duration, opts lcd.Options) error {
-	log.Printf("opening FT232H (vid=0x%04x pid=0x%04x)...", orDefault(vid, ftdi.DefaultVID), orDefault(pid, ftdi.DefaultPID))
-	dev, err := ftdi.Open(vid, pid)
-	if err != nil {
-		return err
-	}
-	defer dev.Close()
-
-	log.Printf("enabling MPSSE, SPI clock ~%d Hz", clockHz)
-	if err := dev.EnableMPSSE(clockHz, board.LowIdle, board.LowDirMask); err != nil {
-		return err
-	}
-
-	f := fan.New(dev)
-	// Make sure the fan starts from a known-off state.
-	if err := f.SetOn(false); err != nil {
-		return err
-	}
-
-	log.Printf("initialising NV3007 LCD (rotation=%d invert=%v bgr=%v)...", opts.Rotation, opts.Invert, opts.BGR)
-	display := lcd.New(dev, opts)
-	if err := display.Init(); err != nil {
-		return err
-	}
-	log.Printf("LCD ready: %dx%d", display.Width(), display.Height())
-
-	// Clean shutdown on Ctrl-C.
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	defer func() {
-		_ = f.SetOn(false)
-		_ = display.Backlight(false)
-	}()
-
-	fb := lcd.NewFramebuffer(display.Width(), display.Height())
-
-	// Draw an initial frame and switch the backlight on.
-	drawScreen(fb, clockHz, 0, fan.Tach{}, driveFan)
-	if err := display.Blit(fb); err != nil {
-		return err
-	}
-	if err := display.Backlight(true); err != nil {
-		return err
-	}
-	log.Printf("backlight on, test screen drawn")
+func run(cfg panel.Config, driveFan bool, tachWin time.Duration) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	start := time.Now()
 	var lastTach fan.Tach
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
 
-	for {
-		if driveFan {
-			t, err := f.MeasureTach(tachWin)
-			if err != nil {
-				return err
-			}
-			lastTach = t
-			if t.SawToggle {
-				log.Printf("tach: ~%d RPM (%d pulses / %d samples over %s)",
-					t.RPM, t.RisingEdges, t.Samples, t.Window.Round(time.Millisecond))
-			} else {
-				log.Printf("tach: no signal (line steady; %d samples) - fan not spinning or not connected",
-					t.Samples)
-			}
+	return panel.Supervise(ctx, cfg, func(ctx context.Context, p *panel.Panel) error {
+		fb := p.NewFramebuffer()
+		draw := func() error {
+			elapsed := int(time.Since(start).Seconds())
+			drawScreen(fb, cfg.ClockHz, elapsed, lastTach, driveFan)
+			return p.Blit(fb)
 		}
-
-		elapsed := int(time.Since(start).Seconds())
-		drawScreen(fb, clockHz, elapsed, lastTach, driveFan)
-		if err := display.Blit(fb); err != nil {
+		if err := draw(); err != nil {
 			return err
 		}
-
-		select {
-		case <-sig:
-			log.Printf("shutting down: fan off, backlight off")
-			return nil
-		case <-ticker.C:
+		if err := p.Backlight(true); err != nil {
+			return err
 		}
-	}
+		log.Printf("LCD ready: %dx%d, backlight on", p.Display.Width(), p.Display.Height())
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+		for {
+			if driveFan {
+				t, err := p.Fan.MeasureTach(tachWin)
+				if err != nil {
+					return err
+				}
+				lastTach = t
+				if t.SawToggle {
+					log.Printf("tach: ~%d RPM (%d pulses / %d samples over %s)",
+						t.RPM, t.RisingEdges, t.Samples, t.Window.Round(time.Millisecond))
+				} else {
+					log.Printf("tach: no signal (line steady; %d samples) - fan not spinning or not connected",
+						t.Samples)
+				}
+			}
+			if err := draw(); err != nil {
+				return err
+			}
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+			}
+		}
+	})
 }
 
 // drawScreen renders the bring-up test screen: color bars to check color and
@@ -160,11 +129,4 @@ func drawScreen(fb *lcd.Framebuffer, clockHz, elapsed int, t fan.Tach, driveFan 
 
 func spinner(n int) string {
 	return string([]byte{"|/-\\"[n%4]})
-}
-
-func orDefault(v, def int) int {
-	if v == 0 {
-		return def
-	}
-	return v
 }

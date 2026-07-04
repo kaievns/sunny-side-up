@@ -51,8 +51,9 @@ type Options struct {
 	BGR bool
 }
 
-// DefaultOptions returns landscape, inverted, RGB - the best first guess.
-func DefaultOptions() Options { return Options{Rotation: 90, Invert: true, BGR: false} }
+// DefaultOptions returns the settings this build's panel actually uses:
+// landscape rotated 270, inversion off, RGB order.
+func DefaultOptions() Options { return Options{Rotation: 270, Invert: false, BGR: false} }
 
 // NV3007 is an initialised display ready to receive frames.
 type NV3007 struct {
