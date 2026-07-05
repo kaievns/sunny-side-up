@@ -2995,7 +2995,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "PCM_Capacitor_AKL:CP_SMD_D6.3mm_H7.7mm"
+		(symbol "PCM_Capacitor_AKL:C_1206"
 			(pin_numbers
 				(hide yes)
 			)
@@ -3014,7 +3014,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "CP_SMD_D6.3mm_H7.7mm"
+			(property "Value" "C_1206"
 				(at 0.635 -2.54 0)
 				(effects
 					(font
@@ -3023,8 +3023,8 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "PCM_Capacitor_SMD_AKL:CP_Elec_6.3x7.7"
-				(at 0 -10.16 0)
+			(property "Footprint" "PCM_Capacitor_SMD_AKL:C_1206_3216Metric"
+				(at 0.9652 -3.81 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -3041,7 +3041,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "SMD Electrolytic Capacitor, 6.3mm Diameter, 7.7mm Height, European Symbol, Alternate KiCad Library"
+			(property "Description" "SMD 1206 MLCC capacitor, Alternate KiCad Library"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3050,7 +3050,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "cap capacitor polarized eu smd electrolytic 6.3x7.7mm 6.3mm"
+			(property "ki_keywords" "cap capacitor ceramic chip mlcc smd 1206"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3059,7 +3059,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "CP_*"
+			(property "ki_fp_filters" "C_*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3068,12 +3068,13 @@
 					(hide yes)
 				)
 			)
-			(symbol "CP_SMD_D6.3mm_H7.7mm_0_1"
-				(rectangle
-					(start -2.286 1.016)
-					(end 2.286 0.508)
+			(symbol "C_1206_0_1"
+				(polyline
+					(pts
+						(xy -2.032 0.762) (xy 2.032 0.762)
+					)
 					(stroke
-						(width 0)
+						(width 0.508)
 						(type default)
 					)
 					(fill
@@ -3082,107 +3083,10 @@
 				)
 				(polyline
 					(pts
-						(xy -1.778 2.286) (xy -0.762 2.286)
+						(xy -2.032 -0.762) (xy 2.032 -0.762)
 					)
 					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 2.794) (xy -1.27 1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start 2.286 -0.508)
-					(end -2.286 -1.016)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-			)
-			(symbol "CP_SMD_D6.3mm_H7.7mm_0_2"
-				(polyline
-					(pts
-						(xy -2.54 -2.54) (xy -0.6604 -0.6604)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.8796 0.6096) (xy 0.6096 -1.8796) (xy 0.9652 -1.524) (xy -1.524 0.9652) (xy -1.8796 0.6096)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -0.9652 1.524) (xy 1.524 -0.9652) (xy 1.8796 -0.6096) (xy -0.6096 1.8796) (xy -0.9652 1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 2.032) (xy 1.016 2.032)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.508 2.54) (xy 0.508 1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.6604 0.6604) (xy 2.54 2.54)
-					)
-					(stroke
-						(width 0)
+						(width 0.508)
 						(type default)
 					)
 					(fill
@@ -3190,7 +3094,81 @@
 					)
 				)
 			)
-			(symbol "CP_SMD_D6.3mm_H7.7mm_1_1"
+			(symbol "C_1206_0_2"
+				(polyline
+					(pts
+						(xy -2.54 -2.54) (xy -0.381 -0.381)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.508 -0.508) (xy -1.651 0.635)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.508 -0.508) (xy 0.635 -1.651)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.381 0.381) (xy 2.54 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.508 0.508) (xy -0.635 1.651)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.508 0.508) (xy 1.651 -0.635)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "C_1206_1_1"
 				(pin passive line
 					(at 0 3.81 270)
 					(length 2.794)
@@ -3228,7 +3206,7 @@
 					)
 				)
 			)
-			(symbol "CP_SMD_D6.3mm_H7.7mm_1_2"
+			(symbol "C_1206_1_2"
 				(pin passive line
 					(at -2.54 -2.54 90)
 					(length 0)
@@ -8611,7 +8589,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "35205dfc-3aea-4093-add0-de88bbe5a15c")
-		(property "Reference" "R?"
+		(property "Reference" "R8"
 			(at 226.06 118.1101 0)
 			(effects
 				(font
@@ -8620,7 +8598,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10kΩ"
+		(property "Value" "1kΩ"
 			(at 227.076 115.824 0)
 			(effects
 				(font
@@ -8656,7 +8634,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C11702"
 			(at 228.6 116.84 90)
 			(effects
 				(font
@@ -8674,7 +8652,7 @@
 		(instances
 			(project "lcd-panel"
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
-					(reference "R?")
+					(reference "R8")
 					(unit 1)
 				)
 			)
@@ -8802,6 +8780,15 @@
 			)
 		)
 		(property "Description" "SOT-23 N-MOSFET enchancement mode transistor, 30V, 5.7A, 1.4W, Alternate KiCAD Library"
+			(at 226.06 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C20917"
 			(at 226.06 133.35 0)
 			(effects
 				(font
@@ -9318,7 +9305,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "57a00f28-8c5f-4469-8ab7-bccb3723ab79")
-		(property "Reference" "L?"
+		(property "Reference" "L1"
 			(at 245.11 124.46 90)
 			(effects
 				(font
@@ -9334,7 +9321,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_Sunlord_SWPA8040S"
+		(property "Footprint" "Inductor_SMD:L_Sunlord_SWPA4018S"
 			(at 245.11 129.54 0)
 			(effects
 				(font
@@ -9361,6 +9348,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C83445"
+			(at 245.11 129.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a291cf1a-0b8b-4e55-9b80-701c69955f15")
 		)
@@ -9370,7 +9366,7 @@
 		(instances
 			(project ""
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
-					(reference "L?")
+					(reference "L1")
 					(unit 1)
 				)
 			)
@@ -10218,7 +10214,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C20917"
+		(property "LCSC" "C15127"
 			(at 236.22 121.92 0)
 			(effects
 				(font
@@ -10751,16 +10747,17 @@
 		)
 	)
 	(symbol
-		(lib_id "PCM_Capacitor_AKL:CP_SMD_D6.3mm_H7.7mm")
+		(lib_id "PCM_Capacitor_AKL:C_1206")
 		(at 250.19 135.89 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
+		(fields_autoplaced yes)
 		(uuid "a5489151-1107-4d4a-99e7-818ce7646178")
-		(property "Reference" "C?"
-			(at 250.952 138.684 0)
+		(property "Reference" "C14"
+			(at 254 134.6199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10768,8 +10765,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "220µF/16V"
-			(at 250.952 141.224 0)
+		(property "Value" "22µF 25V X5R"
+			(at 254 137.1599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10777,8 +10774,8 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_Capacitor_SMD_AKL:CP_Elec_6.3x7.7"
-			(at 250.19 146.05 0)
+		(property "Footprint" "PCM_Capacitor_SMD_AKL:C_1206_3216Metric"
+			(at 251.1552 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10795,7 +10792,16 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "SMD Electrolytic Capacitor, 6.3mm Diameter, 7.7mm Height, European Symbol, Alternate KiCad Library"
+		(property "Description" "SMD 1206 MLCC capacitor, Alternate KiCad Library"
+			(at 250.19 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C12891"
 			(at 250.19 135.89 0)
 			(effects
 				(font
@@ -10813,7 +10819,7 @@
 		(instances
 			(project ""
 				(path "/79e25751-9ad0-48d5-beb3-fa2c39535c34"
-					(reference "C?")
+					(reference "C14")
 					(unit 1)
 				)
 			)
