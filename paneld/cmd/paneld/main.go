@@ -11,6 +11,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -38,8 +39,8 @@ func main() {
 	hasFan := flag.Bool("fan", false, "node has the fan board (control + show fan)")
 	pingWarn := flag.Float64("ping-warn", 0, "latency (ms) above which the node is degraded (0 = role default)")
 	tempWarn := flag.Float64("temp-warn", 80, "temperature (°C) above which the node is degraded")
-	fanOnC := flag.Float64("fan-on", 60, "turn the fan on above this temperature (°C)")
-	fanOffC := flag.Float64("fan-off", 52, "turn the fan off below this temperature (°C)")
+	fanOnC := flag.Float64("fan-on", 65, "turn the fan on at/above this temp (°C)")
+	fanOffC := flag.Float64("fan-off", 55, "turn the fan off below this temp (°C, hysteresis)")
 
 	mock := flag.Bool("mock", false, "use mock data (for a dev machine with no router metrics)")
 	interval := flag.Duration("interval", 2*time.Second, "refresh interval")
@@ -83,7 +84,10 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	fanOn := false // fan control state, preserved across reconnects
+	// Fan on/off state, kept across reconnects. This 3-wire fan can't be
+	// speed-controlled by chopping its supply (it only runs at full), so control
+	// is hysteresis on/off and the tach is used to verify it actually spins.
+	fanOn := false
 
 	return panel.Supervise(ctx, cfg, func(ctx context.Context, p *panel.Panel) error {
 		fb := p.NewFramebuffer()
@@ -97,31 +101,42 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				return err
 			}
 
+			scr := metric.Build(node, sample)
+			scr.Clock = time.Now().Format("15:04")
+
 			if node.HasFan {
-				// Simple hysteresis fan control off the hottest sensor; reading
-				// the tach requires the fan to be powered.
-				hot := maxTemp(sample.CPUTempC, sample.WifiTempC)
-				if !fanOn && hot >= fanOnC {
+				// The fan triggers on the SoC temperature. (The wifi module
+				// idles hotter and would dominate a max() rule; the fan cools
+				// the whole board regardless.) If the sensor read ever fails,
+				// fail safe: run the fan.
+				hot := sample.CPUTempC
+				if math.IsNaN(hot) {
 					fanOn = true
-				} else if fanOn && hot <= fanOffC {
+				} else if !fanOn && hot >= fanOnC {
+					fanOn = true
+				} else if fanOn && hot < fanOffC {
 					fanOn = false
 				}
 				if fanOn {
-					t, terr := p.Fan.MeasureTach(600 * time.Millisecond)
+					// MeasureTach powers the fan and reads real RPM - closed loop:
+					// if it's commanded on but not spinning, we can see it.
+					t, terr := p.Fan.MeasureTach(800 * time.Millisecond)
 					if terr != nil {
 						return terr
 					}
-					sample.FanRPM = t.RPM
+					if t.RPM > 200 {
+						scr.Fan = fmt.Sprintf("%d", t.RPM)
+					} else {
+						scr.Fan = "stall"
+					}
 				} else {
 					if err := p.Fan.SetOn(false); err != nil {
 						return err
 					}
-					sample.FanRPM = 0
+					scr.Fan = "off"
 				}
 			}
 
-			scr := metric.Build(node, sample)
-			scr.Clock = time.Now().Format("15:04")
 			ui.Render(fb.RGBA, scr)
 			if err := p.Blit(fb); err != nil {
 				return err
@@ -182,15 +197,3 @@ func splitHosts(s string) []string {
 	return out
 }
 
-func maxTemp(a, b float64) float64 {
-	if math.IsNaN(a) {
-		a = math.Inf(-1)
-	}
-	if math.IsNaN(b) {
-		b = math.Inf(-1)
-	}
-	if a > b {
-		return a
-	}
-	return b
-}

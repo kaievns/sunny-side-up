@@ -71,6 +71,7 @@ type Device struct {
 
 	lowShadow byte // last value written to the ADBUS low byte
 	lowDir    byte // ADBUS direction mask (1 = output)
+	clockHz   int  // actual MPSSE clock after EnableMPSSE (for sizing delays)
 }
 
 // Open finds and opens the first FT232H with the given VID/PID and puts it into

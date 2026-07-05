@@ -51,6 +51,7 @@ func (d *Device) EnableMPSSE(clockHz int, lowIdle, lowDir byte) error {
 	}
 	d.lowShadow = lowIdle
 	d.lowDir = lowDir
+	d.clockHz = mpsseMasterClockHz / (2 * (divisor + 1)) // actual SCLK
 	return nil
 }
 
@@ -128,6 +129,20 @@ func (d *Device) setLowPinLocked(bit uint, high bool) error {
 	return nil
 }
 
+// SetLowByte writes the whole ADBUS low byte and resyncs the shadow. Use this
+// to restore known pin state after WriteRaw streams (which set the low byte
+// directly and bypass the shadow, so SetLowPin's no-op optimisation would
+// otherwise skip needed writes).
+func (d *Device) SetLowByte(val byte) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if err := d.write([]byte{cmdSetLowByte, val, d.lowDir}); err != nil {
+		return err
+	}
+	d.lowShadow = val
+	return nil
+}
+
 // LowByte returns the current shadow value of the ADBUS low byte.
 func (d *Device) LowByte() byte {
 	d.mu.Lock()
@@ -161,6 +176,64 @@ func (d *Device) spiWriteLocked(data []byte) error {
 		data = data[len(chunk):]
 	}
 	return nil
+}
+
+// WriteRaw sends raw MPSSE command bytes. Used to stream a high-frequency PWM
+// waveform on the gate via clock-delay (0x8F) commands, whose timing the MPSSE
+// executes at its own clock - far faster and steadier than host bit-banging.
+// The caller owns the command semantics and keeping the low-byte shadow sane.
+func (d *Device) WriteRaw(b []byte) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.write(b)
+}
+
+// ClockHz returns the configured MPSSE clock (needed to size 0x8F delays).
+func (d *Device) ClockHz() int { return d.clockHz }
+
+// CmdClockNoData is the MPSSE "clock for n*8 bits, no data" opcode (0x8F). The
+// two length bytes that follow encode (n-1); it pulses SCK (harmless while CS is
+// idle) for (n)*8 cycles, giving a precise delay of n*8 / ClockHz seconds.
+const CmdClockNoData = 0x8F
+
+// CmdSetLowByte is the MPSSE "set data bits low byte" opcode (0x80), followed by
+// value and direction bytes.
+const CmdSetLowByte = cmdSetLowByte
+
+// CmdReadHighByte (0x83) reads the ACBUS pins; CmdSendImmediate (0x87) flushes
+// pending read data back to the host. Embed these in a WriteRaw buffer to sample
+// the tach at a chosen phase of the PWM waveform, then read the byte via ReadRaw.
+const (
+	CmdReadHighByte  = cmdReadHighByte
+	CmdSendImmediate = cmdSendImmediate
+)
+
+// ReadRaw reads exactly n bytes (e.g. the results of read commands embedded in a
+// buffer sent via WriteRaw), with a short timeout.
+func (d *Device) ReadRaw(n int) ([]byte, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	out := make([]byte, 0, n)
+	buf := make([]byte, n)
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for len(out) < n && time.Now().Before(deadline) {
+		m, err := d.read(buf[:n-len(out)])
+		if err != nil {
+			return out, err
+		}
+		out = append(out, buf[:m]...)
+		if m == 0 {
+			time.Sleep(150 * time.Microsecond)
+		}
+	}
+	return out, nil
+}
+
+// Flush drops any buffered RX/TX data.
+func (d *Device) Flush() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.flush()
 }
 
 // ReadHighByte samples all ACBUS pins.

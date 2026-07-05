@@ -1,0 +1,32 @@
+# paneld per-node config. Edit for this node, then: service paneld restart
+#
+# role      gateway | extender | homelab
+# name      location shown top-left (e.g. 'kitchen', 'living room')
+# ip        node IP shown top-left
+# iface     interface for throughput (WAN for gateway, uplink for nodes)
+# wifiiface wifi interface for client counts (e.g. 'phy0-ap0'); blank if none
+# ping      latency target (public IP for gateway; the gateway IP for nodes)
+# hosts     homelab: comma-separated hosts to health-check (e.g. 'nas,cam-02')
+# rotate    panel rotation: 90 or 270 (whichever is upright in your enclosure)
+# dhcp/wifi/fan/invert/bgr  1 to enable, 0 to disable
+# This 3-wire fan runs on/off only (it can't be speed-controlled by chopping
+# power). fan_on: turn on at/above this °C. fan_off: turn off below this °C.
+
+config paneld 'main'
+	option enabled '1'
+	option role 'gateway'
+	option name 'kitchen'
+	option ip '10.0.0.1'
+	option iface 'eth1'
+	option wifiiface ''
+	option ping '1.1.1.1'
+	option hosts ''
+	option rotate '90'
+	option interval '2s'
+	option dhcp '1'
+	option wifi '1'
+	option fan '1'
+	option invert '0'
+	option bgr '0'
+	option fan_on '65'
+	option fan_off '55'

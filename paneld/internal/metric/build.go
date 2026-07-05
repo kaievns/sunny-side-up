@@ -42,9 +42,7 @@ func Build(n Node, s Sample) ui.Screen {
 	if n.HasWifi {
 		scr.Wifi = formatTemp(s.WifiTempC)
 	}
-	if n.HasFan && s.FanRPM >= 0 {
-		scr.Fan = fmt.Sprintf("%d", s.FanRPM)
-	}
+	// scr.Fan is set by the daemon, which owns fan control and knows the duty.
 
 	// The aux (latency) stays green when the node is unhealthy for a reason
 	// unrelated to the link - e.g. a homelab host is down but the mesh is fine.
