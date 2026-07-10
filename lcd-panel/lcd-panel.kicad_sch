@@ -7746,28 +7746,6 @@
 			)
 		)
 	)
-	(global_label "SEL{slash}DTR#"
-		(shape input)
-		(at 184.15 66.04 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "888fc328-9b44-40e0-a591-c17cc7d6e51f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 196.6299 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "VBUS"
 		(shape input)
 		(at 35.56 38.1 180)
