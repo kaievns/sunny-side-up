@@ -69,9 +69,11 @@ type Device struct {
 	mu  sync.Mutex
 	ctx *C.struct_ftdi_context
 
-	lowShadow byte // last value written to the ADBUS low byte
-	lowDir    byte // ADBUS direction mask (1 = output)
-	clockHz   int  // actual MPSSE clock after EnableMPSSE (for sizing delays)
+	lowShadow  byte // last value written to the ADBUS low byte
+	lowDir     byte // ADBUS direction mask (1 = output)
+	highShadow byte // last value written to the ACBUS high byte (v2: /CS_TINY)
+	highDir    byte // ACBUS direction mask (1 = output)
+	clockHz    int  // actual MPSSE clock after EnableMPSSE (for sizing delays)
 }
 
 // Open finds and opens the first FT232H with the given VID/PID and puts it into
@@ -152,6 +154,11 @@ func (d *Device) Close() error {
 	if d.ctx == nil {
 		return nil
 	}
+	// Reset the bit mode before closing: otherwise the chip stays latched in
+	// MPSSE after we exit, which (a) leaves the next opener facing a half-dead
+	// engine (the "MPSSE sync failed" wedges) and (b) blocks the UART/serialupdi
+	// flashing path until a replug or USB reset.
+	C.ftdi_set_bitmode(d.ctx, C.uchar(0x00), C.uchar(bitmodeReset))
 	C.ftdi_usb_close(d.ctx)
 	C.ftdi_free(d.ctx)
 	d.ctx = nil
