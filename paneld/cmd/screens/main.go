@@ -27,12 +27,21 @@ import (
 
 	"github.com/kaievns/sunny-side-up/paneld/internal/lcd"
 	"github.com/kaievns/sunny-side-up/paneld/internal/panel"
+	"github.com/kaievns/sunny-side-up/paneld/internal/tiny"
 	"github.com/kaievns/sunny-side-up/paneld/internal/ui"
 )
 
 type named struct {
 	key string
 	s   ui.Screen
+}
+
+// ifs builds the four bottom-left interface indicators in WAN·LAN·5G·2.4 order.
+func ifs(wan, lan, g5, g24 ui.Health) []ui.Iface {
+	return []ui.Iface{
+		{Label: "WAN", State: wan}, {Label: "LAN", State: lan},
+		{Label: "5GHz", State: g5}, {Label: "2.4GHz", State: g24},
+	}
 }
 
 // colorPage is the dark backdrop for the PNG contact sheet.
@@ -45,6 +54,7 @@ func main() {
 	pngDir := flag.String("png", defaultPNGDir(), "directory for PNG previews (empty to skip)")
 	noLCD := flag.Bool("no-lcd", false, "only write PNG previews; don't touch the panel")
 
+	bl := flag.Int("bl", 200, "backlight brightness 0-255 (v2 boards; v1 falls back to GPIO on/off)")
 	clockHz := flag.Int("clock", 15_000_000, "SPI clock in Hz")
 	rotate := flag.Int("rotate", 270, "display rotation (90/270 landscape)")
 	invert := flag.Bool("invert", false, "display inversion (this panel wants it off)")
@@ -66,14 +76,50 @@ func main() {
 	}
 
 	cfg := panel.Config{ClockHz: *clockHz, VID: *vid, PID: *pid, LCD: lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}}
-	if err := drive(screens, *pick, *cycle, *interval, cfg); err != nil {
+	if err := drive(screens, *pick, *cycle, *interval, byte(*bl), cfg); err != nil {
 		log.Fatalf("screens: %v", err)
+	}
+}
+
+// backlightOn lights the panel on either board revision: v2 boards answer a
+// PING on the shared SPI bus (ATtiny owns the BL) — set brightness there and
+// return the client so the caller can keep pinging (any valid frame resets
+// the ATtiny's 60s dead-host failsafe, which would otherwise dim the panel
+// mid-session). v1 boards get the GPIO backlight. Auto-detects.
+func backlightOn(p *panel.Panel, level byte, clockHz int) *tiny.Client {
+	if clockHz == 0 {
+		clockHz = 15_000_000
+	}
+	if err := p.Device().ConfigureHighByte(0x01, 0x01); err != nil { // /CS_TINY idle high
+		log.Printf("high byte config failed (%v); using v1 GPIO backlight", err)
+		_ = p.Backlight(true)
+		return nil
+	}
+	tc := tiny.New(p.Device(), clockHz)
+	if _, _, err := tc.Ping(); err != nil {
+		_ = p.Backlight(true) // v1 board (or ATtiny absent): GPIO path
+		return nil
+	}
+	if err := tc.SetBL(level); err != nil {
+		log.Printf("v2 backlight set failed: %v", err)
+	} else {
+		log.Printf("v2 board detected: backlight %d/255 via ATtiny", level)
+	}
+	return tc
+}
+
+// keepalive resets the ATtiny's host-silence timer; nil-safe for v1 boards.
+func keepalive(tc *tiny.Client) {
+	if tc != nil {
+		if _, _, err := tc.Ping(); err != nil {
+			log.Printf("tiny keepalive: %v", err)
+		}
 	}
 }
 
 // drive shows either one screen (held, with a live-scrolling sparkline) or all
 // of them in a cycle, reconnecting automatically if the USB link drops.
-func drive(screens []named, pick string, cycle bool, interval time.Duration, cfg panel.Config) error {
+func drive(screens []named, pick string, cycle bool, interval time.Duration, bl byte, cfg panel.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -96,9 +142,7 @@ func drive(screens []named, pick string, cycle bool, interval time.Duration, cfg
 			if err := show(screens[0].s); err != nil {
 				return err
 			}
-			if err := p.Backlight(true); err != nil {
-				return err
-			}
+			tc := backlightOn(p, bl, cfg.ClockHz)
 			i := 0
 			t := time.NewTicker(interval)
 			defer t.Stop()
@@ -112,6 +156,7 @@ func drive(screens []named, pick string, cycle bool, interval time.Duration, cfg
 					if err := show(screens[i].s); err != nil {
 						return err
 					}
+					keepalive(tc)
 				}
 			}
 		}
@@ -124,12 +169,11 @@ func drive(screens []named, pick string, cycle bool, interval time.Duration, cfg
 		if err := show(sel); err != nil {
 			return err
 		}
-		if err := p.Backlight(true); err != nil {
-			return err
-		}
+		tc := backlightOn(p, bl, cfg.ClockHz)
 		spark := append([]float64(nil), sel.Spark...)
 		t := time.NewTicker(700 * time.Millisecond)
 		defer t.Stop()
+		n := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -139,6 +183,9 @@ func drive(screens []named, pick string, cycle bool, interval time.Duration, cfg
 				sel.Spark = spark
 				if err := show(sel); err != nil {
 					return err
+				}
+				if n++; n%4 == 0 { // ~every 3s: keep the ATtiny failsafe fed
+					keepalive(tc)
 				}
 			}
 		}
@@ -164,7 +211,7 @@ func mockScreens() []named {
 			Location: "kitchen", IP: "10.0.0.1", Clock: "14:32",
 			Hero: "521", HeroUnit: "Mb/s", Corner: [2]string{"↑ 68 Mb/s", "46 clients"},
 			Aux: "6.4", AuxUnit: "ms", AuxLabel: "dns 4.2 · loss 0%",
-			StatusL: "internet ok", CPU: "52°", Wifi: "48°", Fan: "3200", Up: "14d",
+			Ifaces: ifs(ui.OK, ui.OK, ui.OK, ui.OK), CPU: "52°", Wifi: "48°", Fan: "3200", Up: "14d",
 			Spark: wave(64, 0.62, 0.22, 1),
 		}},
 		{"gw-down", ui.Screen{
@@ -172,6 +219,7 @@ func mockScreens() []named {
 			Location: "kitchen", IP: "10.0.0.1", Clock: "14:32",
 			Hero: "0", HeroUnit: "Mb/s", Corner: [2]string{"↑ 0 Mb/s", "46 clients"},
 			Aux: "FAIL", AuxLabel: "isp · dns down",
+			Ifaces: ifs(ui.Down, ui.OK, ui.OK, ui.OK),
 			Fault: "WAN down · no internet", CPU: "51°", Wifi: "47°", Fan: "3200", Up: "14d",
 			Spark: dropout(64, 0.55, 0.2, 2),
 		}},
@@ -180,7 +228,7 @@ func mockScreens() []named {
 			Location: "living room", IP: "10.0.0.11", Clock: "14:32",
 			Hero: "149", HeroUnit: "Mb/s", Corner: [2]string{"↑ 42 Mb/s", "7 clients"},
 			Aux: "0.5", AuxUnit: "ms", AuxLabel: "→ gateway · 1G",
-			StatusL: "uplink ok", CPU: "47°", Wifi: "44°", Fan: "2600", Up: "9d",
+			Ifaces: ifs(ui.OK, ui.OK, ui.OK, ui.OK), CPU: "47°", Wifi: "44°", Fan: "2600", Up: "9d",
 			Spark: wave(64, 0.5, 0.16, 3),
 		}},
 		{"ext-lost", ui.Screen{
@@ -188,6 +236,7 @@ func mockScreens() []named {
 			Location: "living room", IP: "10.0.0.11", Clock: "14:32",
 			Hero: "0", HeroUnit: "Mb/s", Corner: [2]string{"↑ 0 Mb/s", "7 clients"},
 			Aux: "LOST", AuxLabel: "no route to gateway",
+			Ifaces: ifs(ui.Down, ui.Down, ui.OK, ui.OK),
 			Fault: "uplink lost · retrying", CPU: "46°", Wifi: "43°", Fan: "2600", Up: "9d",
 			Spark: dropout(64, 0.48, 0.16, 4),
 		}},
@@ -196,7 +245,7 @@ func mockScreens() []named {
 			Location: "garage", IP: "10.0.0.12", Clock: "14:32",
 			Hero: "168", HeroUnit: "Mb/s", Corner: [2]string{"↑ 51 Mb/s", "7 clients"},
 			Aux: "0.8", AuxUnit: "ms", AuxLabel: "→ gateway · 1G",
-			StatusL: "uplink ok", CPU: "49°", Wifi: "45°", Fan: "2800", Up: "9d",
+			Ifaces: ifs(ui.OK, ui.OK, ui.OK, ui.OK), CPU: "49°", Wifi: "45°", Fan: "2800", Up: "9d",
 			Spark: wave(64, 0.52, 0.18, 5),
 		}},
 		{"garage-deg", ui.Screen{
@@ -204,6 +253,7 @@ func mockScreens() []named {
 			Location: "garage", IP: "10.0.0.12", Clock: "14:32",
 			Hero: "88", HeroUnit: "Mb/s", Corner: [2]string{"↑ 6 Mb/s", "5 clients"},
 			Aux: "12", AuxUnit: "ms", AuxLabel: "→ gateway · 100M",
+			Ifaces: ifs(ui.OK, ui.Degraded, ui.OK, ui.OK),
 			Fault: "uplink degraded · 100M", CPU: "58°", Wifi: "61°", Fan: "4200", Up: "9d",
 			Spark: noisyLow(64, 6),
 		}},
@@ -212,7 +262,7 @@ func mockScreens() []named {
 			Location: "office", IP: "10.0.40.1", Clock: "14:32",
 			Hero: "384", HeroUnit: "Mb/s", Corner: [2]string{"↑ 86 Mb/s", "12 clients"},
 			Aux: "0.6", AuxUnit: "ms", AuxLabel: "→ gateway · 1G",
-			StatusL: "14/14 hosts up", CPU: "55°", Wifi: "46°", Fan: "3400", Up: "21d",
+			Ifaces: ifs(ui.OK, ui.OK, ui.OK, ui.OK), CPU: "55°", Wifi: "46°", Fan: "3400", Up: "21d",
 			Spark: wave(64, 0.58, 0.2, 7),
 		}},
 		{"office-alert", ui.Screen{
@@ -220,6 +270,7 @@ func mockScreens() []named {
 			Location: "office", IP: "10.0.40.1", Clock: "14:32",
 			Hero: "372", HeroUnit: "Mb/s", Corner: [2]string{"↑ 84 Mb/s", "12 clients"},
 			Aux: "0.6", AuxUnit: "ms", AuxLabel: "→ gateway · 1G", AuxGreen: true,
+			Ifaces: ifs(ui.OK, ui.Degraded, ui.OK, ui.OK),
 			Fault: "2 hosts unreachable", CPU: "56°", Wifi: "47°", Fan: "3600", Up: "21d",
 			Spark: wave(64, 0.56, 0.18, 8),
 		}},

@@ -2,25 +2,27 @@ package ui
 
 import "image/color"
 
-// Palette from the "Okibi" (dark) theme - https://kaievns.github.io/okibi-akiri-theme/
-// Background is pure black per the panel design; neutrals are the theme's spine,
-// accents are its named colors.
+// Palette straight from the 2026-07-19 design spec (the docs/design/ mocks are
+// P3 screenshots and read brighter - these are the true sRGB values): a near-
+// black ground, a four-step foreground ladder, one identity color per role,
+// and a good/warn/bad state triple.
 var (
-	// Behind the tinted acrylic, muted tones vanish - so everything runs at full
-	// brightness. All neutral text is pure white (hierarchy comes from size, not
-	// brightness), and the accents are vivid, high-luminance versions of the
-	// Okibi hues.
-	colBG     = color.RGBA{0x00, 0x00, 0x00, 0xff} // black
-	colWhite  = color.RGBA{0xff, 0xff, 0xff, 0xff} // all neutral text
-	colText   = color.RGBA{0xff, 0xff, 0xff, 0xff} // (kept as a name; = white)
-	colDim    = color.RGBA{0xff, 0xff, 0xff, 0xff} // (kept as a name; = white)
-	colDimmer = color.RGBA{0xff, 0xff, 0xff, 0xff} // (kept as a name; = white)
+	colBG     = color.RGBA{0x0a, 0x0b, 0x0c, 0xff} // background
+	colWhite  = color.RGBA{0xf2, 0xf4, 0xf5, 0xff} // fg: values / bold figures
+	colText   = color.RGBA{0xc9, 0xcd, 0xd1, 0xff} // fg2: location, vitals values
+	colDim    = color.RGBA{0x9a, 0xa0, 0xa6, 0xff} // fg3: units, sub line, clock, uptime
+	colDimmer = color.RGBA{0x7c, 0x82, 0x8a, 0xff} // fg4: IP, icons
 
-	colBlue  = color.RGBA{0x54, 0xb6, 0xff, 0xff} // gateway identity - bright sky
-	colGreen = color.RGBA{0x3d, 0xf5, 0x7e, 0xff} // nominal, latency - bright green
-	colAmber = color.RGBA{0xff, 0xc2, 0x2e, 0xff} // degraded - bright amber
-	colRed   = color.RGBA{0xff, 0x53, 0x4e, 0xff} // down - bright red
-	colEmber = color.RGBA{0xff, 0x84, 0x40, 0xff} // homelab identity - bright ember
+	colBlue      = color.RGBA{0x5c, 0xaa, 0xff, 0xff} // gateway identity
+	colRoleGreen = color.RGBA{0x41, 0xd9, 0x7e, 0xff} // extender identity
+	colEmber     = color.RGBA{0xff, 0x8f, 0x40, 0xff} // homelab identity
+
+	colGreen = color.RGBA{0x3f, 0xe0, 0x8a, 0xff} // ok state
+	colAmber = color.RGBA{0xff, 0xb2, 0x24, 0xff} // degraded
+	colRed   = color.RGBA{0xff, 0x52, 0x52, 0xff} // down
+
+	// Graph gridlines: 5% white over the background.
+	colGrid = blend(color.RGBA{0xff, 0xff, 0xff, 0xff}, colBG, 0.05)
 )
 
 // Role is the kind of node and drives its identity color and label.
@@ -44,8 +46,8 @@ func (r Role) label() string {
 	return "NODE"
 }
 
-// base is the role's identity color (used for the role word and, when healthy,
-// the accent line and status text).
+// base is the role's identity color (the role word and, when healthy, the
+// sparkline).
 func (r Role) base() color.RGBA {
 	switch r {
 	case RoleGateway:
@@ -53,11 +55,11 @@ func (r Role) base() color.RGBA {
 	case RoleHomelab:
 		return colEmber
 	default: // extender
-		return colGreen
+		return colRoleGreen
 	}
 }
 
-// Health is the node's condition and recolors the accent, hero, and status.
+// Health is the node's condition and recolors the status bar, hero, and spark.
 type Health int
 
 const (
@@ -77,8 +79,8 @@ func (h Health) color() color.RGBA {
 	}
 }
 
-// accent is the color of the left status line and the sparkline: the role's
-// identity when healthy, else the fault color.
+// accent is the color of the sparkline: the role's identity when healthy, else
+// the fault color.
 func accent(r Role, h Health) color.RGBA {
 	if h != OK {
 		return h.color()

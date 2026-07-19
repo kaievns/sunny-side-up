@@ -2,7 +2,10 @@ package ui
 
 import (
 	"image"
+	"image/color"
 	"image/draw"
+	"math"
+	"strings"
 )
 
 // Panel dimensions (landscape).
@@ -10,10 +13,13 @@ const (
 	W = 428
 	H = 142
 
-	barW   = 4        // left health bar - full height, flush to the screen's left edge
-	padL   = 12       // content left edge - a clear gap to the right of the bar
-	padR   = 6        // content right margin
-	rightX = W - padR // right alignment edge
+	// Frame per the 2026-07-19 design spec: a 5px status bar inset 2px from
+	// the top/bottom edges, content from x15, right-flush runs at x428.
+	barW   = 5
+	barTop = 2
+	barBot = H - 2
+	padL   = 15
+	rightX = W
 )
 
 // Screen is the data for one node's Beacon screen. The renderer decides colors
@@ -29,7 +35,7 @@ type Screen struct {
 	HeroUnit  string // "Mb/s"
 	HeroGreen bool   // draw hero in green when healthy (unused by default)
 
-	Corner [2]string // two small stacked "what's connected" stats: "UP 68", "CLI 46"
+	Corner [2]string // two small stacked lines: "↑ 68 Mb/s", "46 clients"
 
 	Aux      string // big right value: latency "6.4", or "FAIL"
 	AuxUnit  string // small unit after it: "ms" (empty for FAIL/LOST)
@@ -38,59 +44,73 @@ type Screen struct {
 
 	Spark []float64 // throughput samples in 0..1
 
-	StatusL string // bottom-left plain-language status: "internet ok"
-	Fault   string // shown instead of StatusL when not healthy: "WAN down · no internet"
+	// Ifaces are the bottom-left interface indicators - small state-colored
+	// labels, typically WAN · LAN · 5GHz · 2.4GHz.
+	Ifaces []Iface
+
+	// Fault is the plain-language failure line ("WAN down · no internet"). When
+	// the node is unhealthy it takes over the aux block's label slot - that
+	// block is the "how is the link doing" corner - replacing AuxLabel.
+	Fault string
 
 	// Bottom-right vitals, each drawn with its icon (empty ones are skipped):
 	CPU  string // cpu temperature, e.g. "52°"
 	Wifi string // wifi module temperature, e.g. "48°"
 	Fan  string // fan speed, e.g. "3200"
-	Up   string // uptime, e.g. "14d" (shown as text, no icon)
+	Up   string // uptime, e.g. "14d"
+}
+
+// Iface is one bottom-left interface indicator.
+type Iface struct {
+	Label string // "WAN", "LAN", "5GHz", "2.4GHz"
+	State Health // OK / Degraded / Down - drives the label color
 }
 
 // NewImage returns a blank panel-sized image.
 func NewImage() *image.RGBA { return image.NewRGBA(image.Rect(0, 0, W, H)) }
 
-// Render draws the screen into dst (which must be W x H).
+// Render draws the screen into dst (which must be W x H). Geometry and type
+// scale follow the 2026-07-19 design spec, baselines verified against the 2x
+// mock crops in docs/design/.
 func Render(dst *image.RGBA, s Screen) {
 	draw.Draw(dst, dst.Bounds(), image.NewUniform(colBG), image.Point{}, draw.Src)
 
-	// The left bar is a pure device-health indicator: green nominal, amber
-	// degraded, red down - full height, against the very edge.
-	fillRect(dst, 0, 0, barW, H, s.Health.color())
+	// Status bar: pure device health, with its soft glow behind it.
+	drawGlow(dst, s.Health.color())
+	fillRect(dst, 0, barTop, barW, barBot-barTop, s.Health.color())
 
-	// The role's identity color (blue/green/ember), falling back to the fault
-	// color when unhealthy - used for the sparkline and bottom status.
+	// The role's identity color, falling back to the fault color when
+	// unhealthy - drives the sparkline.
 	ident := accent(s.Role, s.Health)
 
-	// A tight type scale: two display sizes (hero, aux) and two body sizes
-	// (label, unit). Keeping the set small is what makes it read as one system.
+	// Type scale (design spec, 1:1 px).
 	const (
-		szHero  = 48
-		szAux   = 30
-		szLabel = 14.5
-		szUnit  = 14
+		szTop    = 14 // role (Bold, tracked) + location (Medium)
+		szTopNum = 13 // IP + clock
+		szHero   = 54 // big number (Bold, tightened)
+		szUnit   = 14 // "Mb/s" beside the hero
+		szMid    = 14 // up/clients stack
+		szAux    = 26 // numeric ping (SemiBold)
+		szAuxUn  = 13 // " ms" after it
+		szAuxBig = 28 // FAIL / LOST (Bold)
+		szSub    = 13 // line under the ping
+		szInd    = 11 // interface indicators (SemiBold, tracked)
+		szVit    = 12 // vitals values
 	)
 
-	// --- top row: identity · location · IP  |  time. Sits high so the text tops
-	// hug the top edge, level with the health bar. ---
-	const yTop = 13
-	x := text(dst, padL, yTop, s.Role.label(), SemiBold, szLabel, s.Role.base())
+	// --- header row, flush to the top edge: baseline 13, gaps 7 ---
+	x := textTracked(dst, padL, 13, s.Role.label(), Bold, szTop, 0.56, s.Role.base())
 	if s.Location != "" {
-		x = text(dst, x, yTop, " "+s.Location, Medium, szLabel, colText)
+		x = text(dst, x+7, 13, s.Location, Medium, szTop, colText)
 	}
 	if s.IP != "" {
-		text(dst, x, yTop, "  "+s.IP, Regular, szLabel, colDim)
+		text(dst, x+7, 13, s.IP, Regular, szTopNum, colDimmer)
 	}
 	if s.Clock != "" {
-		textRight(dst, rightX, yTop, s.Clock, Medium, szLabel, colDim)
+		textRight(dst, rightX, 13, s.Clock, Regular, szTopNum, colDim)
 	}
 
-	// --- middle band (the focus): hero on the left, aux block on the right,
-	// both bottom-aligned to bandBase so they read as one row and the graph
-	// below gets a uniform top edge. ---
-	const bandBase = 62
-
+	// --- hero row: number baseline 61, unit on the same baseline 6 after ---
 	heroCol := colWhite
 	if s.HeroGreen {
 		heroCol = colGreen
@@ -98,89 +118,147 @@ func Render(dst *image.RGBA, s Screen) {
 	if s.Health != OK {
 		heroCol = s.Health.color()
 	}
-	hx := text(dst, padL, bandBase, s.Hero, Bold, szHero, heroCol)
+	heroEnd := textTracked(dst, padL, 61, s.Hero, Bold, szHero, -1.08, heroCol)
+	unitEnd := heroEnd
 	if s.HeroUnit != "" {
-		// Unit inline to the right of the number, not on its own line below.
-		hx = text(dst, hx+7, bandBase, s.HeroUnit, Regular, szUnit, colDim)
+		unitEnd = text(dst, heroEnd+6, 61, s.HeroUnit, Regular, szUnit, colDim)
 	}
 
-	// corner stats to the right of the hero, bottom-aligned to the band
-	cx := hx + 20
-	if s.Corner[0] != "" {
-		text(dst, cx, bandBase-19, s.Corner[0], Medium, szLabel, colDim)
-	}
-	if s.Corner[1] != "" {
-		text(dst, cx, bandBase, s.Corner[1], Medium, szLabel, colDim)
-	}
+	// up/clients stack, 14 past the unit: two left-aligned mixed-weight lines
+	// (values SemiBold white, arrows/labels regular gray), baselines 41 + 59.
+	drawRuns(dst, unitEnd+14, 41, s.Corner[0], szMid)
+	drawRuns(dst, unitEnd+14, 59, s.Corner[1], szMid)
 
-	// aux block on the right: big value over its label, bottom-aligned
+	// --- ping block, right-flush. Numeric mode: SemiBold 26 at baseline 40
+	// with " ms" trailing; state words (FAIL/LOST) go Bold 28 at baseline 43.
+	// The sub line runs 4px under either (baseline 60 / 62). ---
 	auxCol := colGreen
 	if s.Health != OK && !s.AuxGreen {
 		auxCol = s.Health.color()
 	}
+	subY := 60
 	if s.Aux != "" {
-		valW := textWidth(s.Aux, SemiBold, szAux)
-		unitW := 0
 		if s.AuxUnit != "" {
-			unitW = textWidth(" "+s.AuxUnit, Regular, szUnit)
-		}
-		start := rightX - valW - unitW
-		text(dst, start, bandBase-16, s.Aux, SemiBold, szAux, auxCol)
-		if s.AuxUnit != "" {
-			text(dst, start+valW, bandBase-16, " "+s.AuxUnit, Regular, szUnit, colDim)
+			valW := textWidth(s.Aux, SemiBold, szAux)
+			unitW := textWidth(" "+s.AuxUnit, Regular, szAuxUn)
+			start := rightX - valW - unitW
+			text(dst, start, 40, s.Aux, SemiBold, szAux, auxCol)
+			text(dst, start+valW, 40, " "+s.AuxUnit, Regular, szAuxUn, colDim)
+		} else {
+			textRight(dst, rightX, 43, s.Aux, Bold, szAuxBig, auxCol)
+			subY = 62
 		}
 	}
-	if s.AuxLabel != "" {
-		textRight(dst, rightX, bandBase, s.AuxLabel, Medium, szLabel, colDim)
-	}
-
-	// --- graph: a modest band, secondary to the hero/aux ---
-	drawSpark(dst, padL, 76, W-padL, 36, s.Spark, ident)
-
-	// --- bottom status row: sits low so the text bottoms hug the bottom edge ---
-	const yBot = 138
-	statusL := s.StatusL
-	statusLCol := ident
+	subLine, subCol := s.AuxLabel, colDim
 	if s.Health != OK && s.Fault != "" {
-		statusL = s.Fault
+		subLine, subCol = s.Fault, s.Health.color()
 	}
-	if statusL != "" {
-		text(dst, padL, yBot, statusL, Medium, szLabel, statusLCol)
+	if subLine != "" {
+		textRight(dst, rightX, subY, subLine, Regular, szSub, subCol)
 	}
-	drawVitals(dst, rightX, yBot, szLabel, s)
+
+	// --- graph band y67..124, full-bleed from the bar to the right edge:
+	// gridlines at 1/3 and 2/3 of the band behind the spark. ---
+	for _, gy := range [...]int{86, 105} {
+		for gx := barW; gx < W; gx++ {
+			setPx(dst, gx, gy, colGrid)
+		}
+	}
+	drawSpark(dst, barW, W-barW, 67, 124, s.Spark, ident)
+
+	// --- bottom strip, flush to the bottom edge: baseline 140 ---
+	drawIfaces(dst, padL, 140, szInd, s.Ifaces)
+	drawVitals(dst, rightX, 140, szVit, s)
 }
 
-// drawVitals lays out the bottom-right vitals as icon+value segments (cpu/wifi/
-// fan) followed by uptime as plain text, right-aligned to rightEdge.
+// drawGlow paints the status bar's halo (the design's `box-shadow 0 0 9px`):
+// the bar rect gaussian-blurred (sigma = blur/2) in the same color, drawn
+// before the solid bar so the bar core stays pure.
+func drawGlow(dst *image.RGBA, c color.RGBA) {
+	const (
+		sigma    = 4.5
+		strength = 1.0 // box-shadow blurs the full-opacity color
+	)
+	cov := func(a, b, p float64) float64 {
+		k := sigma * math.Sqrt2
+		return 0.5 * (math.Erf((b-p)/k) - math.Erf((a-p)/k))
+	}
+	for y := 0; y < H; y++ {
+		cy := cov(barTop, barBot, float64(y)+0.5)
+		for x := 0; x < barW+18; x++ {
+			a := strength * cy * cov(0, barW, float64(x)+0.5)
+			if a < 0.004 {
+				continue
+			}
+			setPx(dst, x, y, blend(c, colBG, a))
+		}
+	}
+}
+
+// drawRuns draws a line of space-separated tokens in mixed weight: tokens
+// beginning with a digit render semibold-white (the values), everything else
+// in label gray.
+func drawRuns(dst *image.RGBA, x, baseline int, line string, size float64) {
+	sp := textWidth(" ", Regular, size)
+	for i, tok := range strings.Fields(line) {
+		if i > 0 {
+			x += sp
+		}
+		if tok[0] >= '0' && tok[0] <= '9' {
+			x = text(dst, x, baseline, tok, SemiBold, size, colWhite)
+		} else {
+			x = text(dst, x, baseline, tok, Regular, size, colDim)
+		}
+	}
+}
+
+// drawIfaces lays out the bottom-left interface indicators as small tracked
+// semibold labels colored by state - green up, amber degraded, red down.
+func drawIfaces(dst *image.RGBA, x, baseline int, size float64, ifs []Iface) {
+	// The spec gap is 10, but our full-hinted faces round each label's advance
+	// up ~1px vs the design's fractional metrics - 9 keeps the measured ink
+	// gaps (12/12/11) and the row's total width on the design's pixels.
+	const gap = 9
+	for _, f := range ifs {
+		x = textTracked(dst, x, baseline, f.Label, SemiBold, size, 0.33, f.State.color())
+		x += gap
+	}
+}
+
+// drawVitals lays out the bottom-right vitals as icon+value segments (cpu/
+// wifi/fan/uptime), right-aligned to rightEdge. Temps and rpm read brighter
+// than the uptime, per the design.
 func drawVitals(dst *image.RGBA, rightEdge, baseline int, size float64, s Screen) {
 	type seg struct {
 		ic  *icon
 		txt string
+		col color.RGBA
 	}
 	var segs []seg
 	if s.CPU != "" {
-		segs = append(segs, seg{&iconCPU, s.CPU})
+		segs = append(segs, seg{&iconCPU, s.CPU, colText})
 	}
 	if s.Wifi != "" {
-		segs = append(segs, seg{&iconWifi, s.Wifi})
+		segs = append(segs, seg{&iconWifi, s.Wifi, colText})
 	}
 	if s.Fan != "" {
-		segs = append(segs, seg{&iconFan, s.Fan})
+		segs = append(segs, seg{&iconFan, s.Fan, colText})
 	}
 	if s.Up != "" {
-		segs = append(segs, seg{nil, s.Up})
+		segs = append(segs, seg{&iconClock, s.Up, colDim})
 	}
 	if len(segs) == 0 {
 		return
 	}
 
 	const iconGap = 4 // between an icon and its value
-	const segGap = 13 // between segments
+	const segGap = 10 // between segments
+	const iconY = 129 // icon boxes sit centered in the strip
 
 	total := segGap * (len(segs) - 1)
 	widths := make([]int, len(segs))
 	for i, sg := range segs {
-		w := textWidth(sg.txt, Medium, size)
+		w := textWidth(sg.txt, Regular, size)
 		if sg.ic != nil {
 			w += sg.ic.w + iconGap
 		}
@@ -191,11 +269,10 @@ func drawVitals(dst *image.RGBA, rightEdge, baseline int, size float64, s Screen
 	x := rightEdge - total
 	for _, sg := range segs {
 		if sg.ic != nil {
-			// Center the icon on the digits' cap band (~baseline-5).
-			sg.ic.draw(dst, x, baseline-5-sg.ic.h/2, colDim)
+			sg.ic.draw(dst, x, iconY, colDimmer)
 			x += sg.ic.w + iconGap
 		}
-		x = text(dst, x, baseline, sg.txt, Medium, size, colDim)
+		x = text(dst, x, baseline, sg.txt, Regular, size, sg.col)
 		x += segGap
 	}
 }

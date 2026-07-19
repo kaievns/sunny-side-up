@@ -11,7 +11,7 @@ import (
 // numbers and derives the health/fault state. All the display and threshold
 // logic lives here, in one place.
 func Build(n Node, s Sample) ui.Screen {
-	health, statusL, fault := assess(n, s)
+	health, fault := assess(n, s)
 
 	scr := ui.Screen{
 		Role:     n.Role,
@@ -33,8 +33,8 @@ func Build(n Node, s Sample) ui.Screen {
 
 		Spark: s.Down01,
 
-		StatusL: statusL,
-		Fault:   fault,
+		Ifaces: ifaces(n, s),
+		Fault:  fault,
 
 		CPU: formatTemp(s.CPUTempC),
 		Up:  formatUptime(s.UptimeSec),
@@ -52,55 +52,96 @@ func Build(n Node, s Sample) ui.Screen {
 	return scr
 }
 
-// assess derives the health state, the healthy status phrase, and the fault
-// message, per role.
-func assess(n Node, s Sample) (ui.Health, string, string) {
+// assess derives the health state and the fault message, per role. (Healthy
+// nodes carry no phrase anymore - the interface indicators say it.)
+func assess(n Node, s Sample) (ui.Health, string) {
 	switch n.Role {
 	case ui.RoleGateway:
 		if !s.WANUp {
-			return ui.Down, "", "WAN down · no internet"
+			return ui.Down, "WAN down · no internet"
 		}
 		if !s.DNSUp {
-			return ui.Degraded, "", "dns not resolving"
+			return ui.Degraded, "dns not resolving"
 		}
 		if overTemp(n, s) {
-			return ui.Degraded, "", "running hot"
+			return ui.Degraded, "running hot"
 		}
 		if !math.IsNaN(s.PingMs) && s.PingMs > n.PingWarnMs {
-			return ui.Degraded, "", "high latency · " + formatPing(s.PingMs) + "ms"
+			return ui.Degraded, "high latency · " + formatPing(s.PingMs) + "ms"
 		}
-		return ui.OK, "internet ok", ""
+		return ui.OK, ""
 
 	case ui.RoleHomelab:
 		// Homelab is dual-duty: a homelab host being down is the headline fault,
 		// but the uplink/traffic may be perfectly fine.
 		if !s.UplinkUp {
-			return ui.Down, "", "uplink lost · retrying"
+			return ui.Down, "uplink lost · retrying"
 		}
 		if s.HostsTotal > 0 && s.HostsUp < s.HostsTotal {
 			down := s.HostsTotal - s.HostsUp
-			return ui.Degraded, "", fmt.Sprintf("%d host%s unreachable", down, plural(down))
+			return ui.Degraded, fmt.Sprintf("%d host%s unreachable", down, plural(down))
 		}
 		if degradedLink(n, s) {
-			return ui.Degraded, "", "uplink degraded · " + linkSpeedLabel(s.LinkMbps)
+			return ui.Degraded, "uplink degraded · " + linkSpeedLabel(s.LinkMbps)
 		}
 		if overTemp(n, s) {
-			return ui.Degraded, "", "running hot"
+			return ui.Degraded, "running hot"
 		}
-		return ui.OK, fmt.Sprintf("%d/%d hosts up", s.HostsUp, s.HostsTotal), ""
+		return ui.OK, ""
 
 	default: // RoleExtender
 		if !s.UplinkUp {
-			return ui.Down, "", "uplink lost · retrying"
+			return ui.Down, "uplink lost · retrying"
 		}
 		if degradedLink(n, s) {
-			return ui.Degraded, "", "uplink degraded · " + linkSpeedLabel(s.LinkMbps)
+			return ui.Degraded, "uplink degraded · " + linkSpeedLabel(s.LinkMbps)
 		}
 		if overTemp(n, s) {
-			return ui.Degraded, "", "running hot"
+			return ui.Degraded, "running hot"
 		}
-		return ui.OK, "uplink ok", ""
+		return ui.OK, ""
 	}
+}
+
+// ifaces builds the bottom-left indicator row: WAN · LAN · 5GHz · 2.4GHz,
+// with the design files' semantics (docs/design/): WAN = reachability of the
+// world (or the gateway); a LOST uplink takes WAN and LAN down together (the
+// wired path is dead), while a DEGRADED wired uplink shows on LAN. The
+// homelab's unreachable hosts also surface on LAN. The radios ride the wifi
+// module's temp read as a liveness proxy (the sensor answers only while the
+// module is up) until per-band ubus states are wired in.
+func ifaces(n Node, s Sample) []ui.Iface {
+	wan, lan := ui.OK, ui.OK
+	if n.Role == ui.RoleGateway {
+		switch {
+		case !s.WANUp:
+			wan = ui.Down
+		case !s.DNSUp:
+			wan = ui.Degraded
+		}
+	} else {
+		switch {
+		case !s.UplinkUp:
+			wan, lan = ui.Down, ui.Down
+		case degradedLink(n, s):
+			lan = ui.Degraded
+		}
+	}
+	if n.Role == ui.RoleHomelab && s.HostsTotal > 0 && s.HostsUp < s.HostsTotal {
+		lan = ui.Degraded
+	}
+
+	out := []ui.Iface{{Label: "WAN", State: wan}, {Label: "LAN", State: lan}}
+	if n.HasWifi {
+		radio := ui.OK
+		if math.IsNaN(s.WifiTempC) {
+			radio = ui.Down
+		}
+		out = append(out,
+			ui.Iface{Label: "5GHz", State: radio},
+			ui.Iface{Label: "2.4GHz", State: radio})
+	}
+	return out
 }
 
 func auxLabel(n Node, s Sample) string {

@@ -5,34 +5,38 @@ import (
 	"image/color"
 )
 
-// drawSpark renders a smooth throughput sparkline in the rect (x,y,w,h): a
-// filled area that fades from the line color down to the background, with a
-// bright line on top. data holds samples in 0..1 (0 = bottom, 1 = top); it is
-// linearly resampled to the pixel width.
-func drawSpark(dst *image.RGBA, x, y, w, h int, data []float64, line color.RGBA) {
-	if len(data) < 2 || w < 2 || h < 2 {
+// drawSpark renders the throughput sparkline per the design spec: samples in
+// 0..1 map into the graph band (1 -> top, 0 -> zeroY), the ~1.5px line is
+// drawn in the accent color, and the area fill is a vertical gradient of the
+// line color from 34% opacity under the line to 4% at the band's bottom edge.
+func drawSpark(dst *image.RGBA, x, w, top, zeroY int, data []float64, line color.RGBA) {
+	if len(data) < 2 || w < 2 || zeroY <= top {
 		return
 	}
-	bottom := y + h - 1
-	span := float64(h - 1)
+	span := float64(zeroY - top)
 
 	for i := 0; i < w; i++ {
 		t := float64(i) / float64(w-1)
 		v := clamp01(sampleAt(data, t))
-		top := bottom - int(v*span+0.5)
+		ly := zeroY - int(v*span+0.5)
 
-		// Area fill: brightest just under the line, fading to the background at
-		// the bottom of the band (band-relative gradient for a consistent look).
-		for yy := top; yy <= bottom; yy++ {
-			frac := float64(bottom-yy) / span // 1 near top of band, 0 at bottom
-			a := 0.10 + 0.40*frac
+		for yy := ly; yy <= zeroY; yy++ {
+			frac := 0.0
+			if zeroY > ly {
+				frac = float64(yy-ly) / float64(zeroY-ly)
+			}
+			a := 0.34 - 0.30*frac
 			setPx(dst, x+i, yy, blend(line, colBG, a))
 		}
-		// The line itself: a solid 2px full-brightness stroke so it reads
-		// through the tint.
-		setPx(dst, x+i, top, line)
-		if top+1 <= bottom {
-			setPx(dst, x+i, top+1, line)
+		// The 2px line on top, with soft 1px edges so it reads like the
+		// design's antialiased 1.5px stroke rather than a hard bitmap line.
+		setPx(dst, x+i, ly-1, blend(line, colBG, 0.35))
+		setPx(dst, x+i, ly, line)
+		if ly+1 <= zeroY+1 {
+			setPx(dst, x+i, ly+1, line)
+		}
+		if ly+2 <= zeroY+1 {
+			setPx(dst, x+i, ly+2, blend(line, colBG, 0.45))
 		}
 	}
 }

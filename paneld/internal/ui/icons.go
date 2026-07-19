@@ -33,40 +33,72 @@ func (ic icon) draw(dst *image.RGBA, x, y int, c color.RGBA) {
 	}
 }
 
-// Vitals icons, ~9px. Kept as simple, solid silhouettes so they read at panel
-// size (fine internal detail just turns to mush this small).
+// Vitals icons per the 2026-07-19 design spec: SoC chip, wifi and clock are
+// 12x12 outlined forms, the fan is a 13x13 rounded housing with filled clover
+// blades (matched against the docs/design/ mock crops).
 var (
-	// CPU: a solid die with two pins on each side.
+	// CPU: an outlined die with two pins per side and a hollow center ring.
 	iconCPU = mkIcon(
-		"  #   #  ",
-		" ####### ",
-		" ####### ",
-		"#########",
-		" ####### ",
-		"#########",
-		" ####### ",
-		" ####### ",
-		"  #   #  ",
+		"    #  #    ",
+		" ########## ",
+		" #        # ",
+		" #        # ",
+		"##  ####  ##",
+		" #  #  #  # ",
+		" #  #  #  # ",
+		"##  ####  ##",
+		" #        # ",
+		" #        # ",
+		" ########## ",
+		"    #  #    ",
 	)
-	// Wi-Fi: two broadcast arcs over a dot.
+	// Wi-Fi: two broadcast arcs over a dot (bottom-weighted like the design -
+	// the dot sits on the strip text's baseline rows).
 	iconWifi = mkIcon(
-		"  #####  ",
-		" #     # ",
-		"   ###   ",
-		"  #   #  ",
-		"         ",
-		"    #    ",
+		"            ",
+		"            ",
+		"            ",
+		"   ######   ",
+		" ##      ## ",
+		"            ",
+		"    ####    ",
+		"  ##    ##  ",
+		"            ",
+		"            ",
+		"     ##     ",
+		"     ##     ",
 	)
-	// Fan: a solid disc with swept blade gaps (a spinning look).
+	// Fan: four filled blades around a hub (an X of dark gaps between them),
+	// inside a rounded housing.
 	iconFan = mkIcon(
-		"  #####  ",
-		" ####### ",
-		"###  ####",
-		"## ##  ##",
-		"## ### ##",
-		"##  ## ##",
-		"####  ###",
-		" ####### ",
-		"  #####  ",
+		"  #########  ",
+		" #         # ",
+		"#           #",
+		"#  ### ###  #",
+		"#  ### ###  #",
+		"#  ### ###  #",
+		"#     #     #",
+		"#  ### ###  #",
+		"#  ### ###  #",
+		"#  ### ###  #",
+		"#           #",
+		" #         # ",
+		"  #########  ",
+	)
+	// Clock: a dial with hands at twelve and three (uptime). One row shorter
+	// than its box so it rides the strip's optical center like the design.
+	iconClock = mkIcon(
+		"            ",
+		"    ####    ",
+		"  ##    ##  ",
+		" #        # ",
+		" #   #    # ",
+		"#    #     #",
+		"#    #     #",
+		"#    ####  #",
+		"#          #",
+		" #        # ",
+		"  ##    ##  ",
+		"    ####    ",
 	)
 )

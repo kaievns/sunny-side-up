@@ -102,3 +102,22 @@ func textRight(dst draw.Image, right, y int, s string, w Weight, px float64, col
 func textWidth(s string, w Weight, px float64) int {
 	return font.MeasureString(face(w, px), s).Round()
 }
+
+// textTracked draws s like text but with extra letter-spacing (track pixels
+// added between glyphs). The design tracks the role word (0.04em) and the
+// interface indicators (0.03em); the hero number is tracked negative.
+func textTracked(dst draw.Image, x, y int, s string, w Weight, px, track float64, col color.Color) int {
+	f := face(w, px)
+	d := &font.Drawer{Dst: dst, Src: image.NewUniform(col), Face: f, Dot: fixed.P(x, y)}
+	t := fixed.Int26_6(track * 64)
+	first := true
+	for _, r := range s {
+		if !first {
+			d.Dot.X += t
+		}
+		first = false
+		d.DrawString(string(r))
+	}
+	return d.Dot.X.Round()
+}
+

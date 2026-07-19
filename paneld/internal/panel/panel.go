@@ -57,6 +57,11 @@ func Open(cfg Config) (*Panel, error) {
 	return &Panel{dev: dev, Display: display, Fan: f}, nil
 }
 
+// Device exposes the underlying FT232H for extras that share the transport
+// (the v2 boards' ATtiny SPI client). All device access is serialized by the
+// ftdi layer's own mutex.
+func (p *Panel) Device() *ftdi.Device { return p.dev }
+
 // NewFramebuffer returns a framebuffer matching the display size.
 func (p *Panel) NewFramebuffer() *lcd.Framebuffer {
 	return lcd.NewFramebuffer(p.Display.Width(), p.Display.Height())
