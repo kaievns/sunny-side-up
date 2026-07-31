@@ -19,6 +19,7 @@ import (
 // MIPI DCS command bytes used outside the vendor init block.
 const (
 	cmdSLPOUT  = 0x11
+	cmdNORON   = 0x13
 	cmdINVOFF  = 0x20
 	cmdINVON   = 0x21
 	cmdDISPON  = 0x29
@@ -26,6 +27,7 @@ const (
 	cmdRASET   = 0x2B
 	cmdRAMWR   = 0x2C
 	cmdMADCTL  = 0x36
+	cmdCOLMOD  = 0x3A
 	madctlBGR  = 0x08 // MADCTL BGR bit
 )
 
@@ -219,10 +221,47 @@ func (l *NV3007) Blit(fb *Framebuffer) error {
 		}
 	}
 
+	if err := l.reassert(); err != nil {
+		return err
+	}
 	if err := l.setAddrWindowNative(); err != nil {
 		return err
 	}
 	return l.dev.SPIWrite(out)
+}
+
+// reassert re-sends the display-state registers ahead of every frame. On a
+// marginal SPI link (load-induced noise on the router), a single flipped bit
+// can latch a mode command - all-pixels-off blanks the glass, inversion or
+// MADCTL garble it - and the mode then sticks forever since pixel data never
+// clears it. Re-asserting is a handful of idempotent bytes per frame and turns
+// any such glitch into at most one bad refresh interval. A glitched SLPIN
+// needs 120ms after SLPOUT to fully recover; that settles by the next frame.
+func (l *NV3007) reassert() error {
+	if err := l.command(cmdSLPOUT); err != nil {
+		return err
+	}
+	madctl := byte(0x00)
+	if l.opts.BGR {
+		madctl |= madctlBGR
+	}
+	if err := l.command(cmdMADCTL, madctl); err != nil {
+		return err
+	}
+	if err := l.command(cmdCOLMOD, 0x05); err != nil { // RGB565
+		return err
+	}
+	inv := byte(cmdINVOFF)
+	if l.opts.Invert {
+		inv = cmdINVON
+	}
+	if err := l.command(inv); err != nil {
+		return err
+	}
+	if err := l.command(cmdNORON); err != nil {
+		return err
+	}
+	return l.command(cmdDISPON)
 }
 
 // rotateNativeToLogical maps a native pixel (nx in 0..nativeW-1, ny in

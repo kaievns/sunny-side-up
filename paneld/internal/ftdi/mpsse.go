@@ -178,6 +178,32 @@ func (d *Device) spiWriteLocked(data []byte) error {
 	return nil
 }
 
+// DrainRX reads whatever response bytes are sitting in the FTDI's RX path
+// (up to max), returning them. The MPSSE replies 0xFA <byte> to any invalid
+// opcode, so a non-empty drain after a write-only sequence means the command
+// stream desynced - this is a bring-up diagnostic.
+func (d *Device) DrainRX(max int) ([]byte, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	out := make([]byte, 0, max)
+	buf := make([]byte, 512)
+	empty := 0
+	for len(out) < max && empty < 8 { // ~8 polls past the 16ms latency timer
+		n, err := d.read(buf)
+		if err != nil {
+			return out, err
+		}
+		if n == 0 {
+			empty++
+			time.Sleep(20 * time.Millisecond)
+			continue
+		}
+		empty = 0
+		out = append(out, buf[:n]...)
+	}
+	return out, nil
+}
+
 // WriteRaw sends raw MPSSE command bytes. Used to stream a high-frequency PWM
 // waveform on the gate via clock-delay (0x8F) commands, whose timing the MPSSE
 // executes at its own clock - far faster and steadier than host bit-banging.

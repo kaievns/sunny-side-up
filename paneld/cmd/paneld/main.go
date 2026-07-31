@@ -5,6 +5,7 @@
 //
 //	paneld -role gateway  -name kitchen     -ip 10.0.0.1  -iface eth1 -ping 1.1.1.1 -dhcp -wifi -fan
 //	paneld -role extender -name "living room" -ip 10.0.0.11 -iface eth0 -ping 10.0.0.1 -wifiiface phy0-ap0 -wifi -fan
+//	paneld -board v2 -role homelab -name office -ip 10.0.40.1 -iface eth0 -ping 10.0.0.1 -hosts nas,pve -fan
 //	paneld -mock -role gateway -name kitchen -ip 10.0.0.1   # dev on a laptop
 package main
 
@@ -23,8 +24,22 @@ import (
 	"github.com/kaievns/sunny-side-up/paneld/internal/lcd"
 	"github.com/kaievns/sunny-side-up/paneld/internal/metric"
 	"github.com/kaievns/sunny-side-up/paneld/internal/panel"
+	"github.com/kaievns/sunny-side-up/paneld/internal/tiny"
 	"github.com/kaievns/sunny-side-up/paneld/internal/ui"
 )
+
+// fanOpts is the board revision plus everything fan/backlight control needs.
+type fanOpts struct {
+	v2   bool    // v2 board: ATtiny owns fan PWM + backlight over SPI
+	bl   byte    // v2 backlight brightness
+	onC  float64 // fan on at/above this SoC temp (hysteresis top)
+	offC float64 // fan off below this temp (hysteresis bottom)
+	maxC float64 // v2: temp of full fan duty (curve top)
+}
+
+// minDuty is the calibrated keep-spinning floor (also clamped in firmware):
+// below this the NF-A4x10 stalls, so the curve starts here, ~3200 rpm.
+const minDuty = 26
 
 func main() {
 	role := flag.String("role", "gateway", "node role: gateway | extender | homelab")
@@ -41,6 +56,9 @@ func main() {
 	tempWarn := flag.Float64("temp-warn", 80, "temperature (°C) above which the node is degraded")
 	fanOnC := flag.Float64("fan-on", 65, "turn the fan on at/above this temp (°C)")
 	fanOffC := flag.Float64("fan-off", 55, "turn the fan off below this temp (°C, hysteresis)")
+	fanMaxC := flag.Float64("fan-max", 75, "temp (°C) of full fan speed (v2 duty curve top)")
+	boardRev := flag.String("board", "v1", "panel board revision: v1 (GPIO fan gate) | v2 (ATtiny fan+BL)")
+	bl := flag.Int("bl", 200, "backlight brightness 0-255 (v2 boards)")
 
 	mock := flag.Bool("mock", false, "use mock data (for a dev machine with no router metrics)")
 	interval := flag.Duration("interval", 2*time.Second, "refresh interval")
@@ -74,13 +92,14 @@ func main() {
 	}
 
 	cfg := panel.Config{ClockHz: *clockHz, LCD: lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}}
+	opts := fanOpts{v2: *boardRev == "v2", bl: byte(*bl), onC: *fanOnC, offC: *fanOffC, maxC: *fanMaxC}
 
-	if err := run(node, provider, cfg, *interval, *fanOnC, *fanOffC); err != nil {
+	if err := run(node, provider, cfg, *interval, opts); err != nil {
 		log.Fatalf("paneld: %v", err)
 	}
 }
 
-func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval time.Duration, fanOnC, fanOffC float64) error {
+func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval time.Duration, opts fanOpts) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -90,6 +109,22 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 	fanOn := false
 
 	return panel.Supervise(ctx, cfg, func(ctx context.Context, p *panel.Panel) error {
+		// v2 boards: the ATtiny owns fan PWM and backlight, reached over the
+		// shared SPI bus. Set up per connection; a failed ping is treated like
+		// any other link fault so the supervisor retries (the ATtiny may still
+		// be booting right after plug-in). Every frame we send also feeds its
+		// 60s dead-host failsafe.
+		var tc *tiny.Client
+		if opts.v2 {
+			if err := p.Device().ConfigureHighByte(0x01, 0x01); err != nil { // /CS_TINY idle high
+				return err
+			}
+			tc = tiny.New(p.Device(), cfg.ClockHz)
+			if _, _, err := tc.Ping(); err != nil {
+				return fmt.Errorf("v2 board: ATtiny not answering: %w", err)
+			}
+		}
+
 		fb := p.NewFramebuffer()
 		lit := false
 		ticker := time.NewTicker(interval)
@@ -112,12 +147,36 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				hot := sample.CPUTempC
 				if math.IsNaN(hot) {
 					fanOn = true
-				} else if !fanOn && hot >= fanOnC {
+				} else if !fanOn && hot >= opts.onC {
 					fanOn = true
-				} else if fanOn && hot < fanOffC {
+				} else if fanOn && hot < opts.offC {
 					fanOn = false
 				}
-				if fanOn {
+				switch {
+				case opts.v2:
+					// Proportional duty on the v2 buck: the calibrated floor at
+					// the hysteresis point, full speed at maxC. Duty 0 also
+					// clears a latched STALL_FAULT in the firmware.
+					var duty byte
+					if fanOn {
+						duty = fanDuty(hot, opts.onC, opts.maxC)
+					}
+					if err := tc.SetFanDuty(duty); err != nil {
+						return err
+					}
+					rpm, flags, err := tc.Status()
+					if err != nil {
+						return err
+					}
+					switch {
+					case flags&tiny.FlagStallFault != 0:
+						scr.Fan = "stall"
+					case duty == 0:
+						scr.Fan = "off"
+					default:
+						scr.Fan = fmt.Sprintf("%d", rpm)
+					}
+				case fanOn:
 					// MeasureTach powers the fan and reads real RPM - closed loop:
 					// if it's commanded on but not spinning, we can see it.
 					t, terr := p.Fan.MeasureTach(800 * time.Millisecond)
@@ -129,7 +188,7 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 					} else {
 						scr.Fan = "stall"
 					}
-				} else {
+				default:
 					if err := p.Fan.SetOn(false); err != nil {
 						return err
 					}
@@ -142,7 +201,11 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				return err
 			}
 			if !lit {
-				if err := p.Backlight(true); err != nil {
+				if opts.v2 {
+					if err := tc.SetBL(opts.bl); err != nil {
+						return err
+					}
+				} else if err := p.Backlight(true); err != nil {
 					return err
 				}
 				lit = true
@@ -156,6 +219,22 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 			}
 		}
 	})
+}
+
+// fanDuty maps a SoC temperature onto the v2 fan curve: the calibrated
+// keep-spinning floor at onC, ramping linearly to full duty at maxC. An
+// unreadable sensor means full speed - same fail-safe stance as v1.
+func fanDuty(tempC, onC, maxC float64) byte {
+	if math.IsNaN(tempC) {
+		return 255
+	}
+	f := (tempC - onC) / (maxC - onC)
+	if f < 0 {
+		f = 0
+	} else if f > 1 {
+		f = 1
+	}
+	return byte(minDuty + f*(255-minDuty) + 0.5)
 }
 
 func parseRole(s string) ui.Role {

@@ -9,8 +9,15 @@
 # hosts     homelab: comma-separated hosts to health-check (e.g. 'nas,cam-02')
 # rotate    panel rotation: 90 or 270 (whichever is upright in your enclosure)
 # dhcp/wifi/fan/invert/bgr  1 to enable, 0 to disable
-# This 3-wire fan runs on/off only (it can't be speed-controlled by chopping
-# power). fan_on: turn on at/above this °C. fan_off: turn off below this °C.
+# board     v1 (GPIO fan gate, on/off fan) | v2 (ATtiny fan PWM + backlight)
+# bl        v2 backlight brightness 0-255
+# clock     SPI clock in Hz. 15000000 when the USB cabling is clean; drop to
+#           6000000 if the screen corrupts under SoC load (marginal cables
+#           lose SPI margin when the router is busy - the ATtiny link's CRC
+#           rides it out, the LCD can't)
+# fan_on: fan on at/above this °C; fan_off: off below this °C (hysteresis).
+# v2 boards run a duty curve between them: calibrated floor at fan_on,
+# full speed at fan_max. v1 fans are on/off only (chopping stalls them).
 
 config paneld 'main'
 	option enabled '1'
@@ -30,3 +37,6 @@ config paneld 'main'
 	option bgr '0'
 	option fan_on '65'
 	option fan_off '55'
+	option fan_max '75'
+	option board 'v1'
+	option bl '200'
