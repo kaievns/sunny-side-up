@@ -109,10 +109,19 @@ func (p *LocalProvider) clients() int {
 		return countLines(b) // one active lease per line
 	}
 	if p.node.WifiIface != "" {
-		out, err := run(context.Background(), "iw", "dev", p.node.WifiIface, "station", "dump")
-		if err == nil {
-			return strings.Count(out, "Station ")
+		// One AP node can run several BSS ifaces (bands / SSIDs) - sum the
+		// associated stations across the comma-separated list.
+		n := 0
+		for _, ifc := range strings.Split(p.node.WifiIface, ",") {
+			if ifc = strings.TrimSpace(ifc); ifc == "" {
+				continue
+			}
+			out, err := run(context.Background(), "iw", "dev", ifc, "station", "dump")
+			if err == nil {
+				n += strings.Count(out, "Station ")
+			}
 		}
+		return n
 	}
 	return 0
 }

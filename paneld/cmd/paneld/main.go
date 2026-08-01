@@ -46,7 +46,7 @@ func main() {
 	name := flag.String("name", "node", "location name shown in the top row")
 	ip := flag.String("ip", "", "node IP shown in the top row")
 	iface := flag.String("iface", "", "network interface for throughput (WAN for gateway, uplink for nodes)")
-	wifiIface := flag.String("wifiiface", "", "wifi interface for client counts")
+	wifiIface := flag.String("wifiiface", "", "wifi interface(s) for client counts, comma-separated")
 	ping := flag.String("ping", "", "latency probe target (public IP for gateway, gateway IP for nodes)")
 	dhcp := flag.Bool("dhcp", false, "count DHCP leases as clients (gateway)")
 	hosts := flag.String("hosts", "", "comma-separated homelab hosts to health-check")
@@ -125,7 +125,22 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 			}
 		}
 
+		// Boot splash: light the glass the moment the link is up, so the
+		// device shows life while the first sample is still being gathered
+		// (and again on every reconnect).
 		fb := p.NewFramebuffer()
+		ui.RenderSplash(fb.RGBA, node.Role, node.Name)
+		if err := p.Blit(fb); err != nil {
+			return err
+		}
+		if opts.v2 {
+			if err := tc.SetBL(opts.bl); err != nil {
+				return err
+			}
+		} else if err := p.Backlight(true); err != nil {
+			return err
+		}
+
 		lit := false
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -201,13 +216,6 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				return err
 			}
 			if !lit {
-				if opts.v2 {
-					if err := tc.SetBL(opts.bl); err != nil {
-						return err
-					}
-				} else if err := p.Backlight(true); err != nil {
-					return err
-				}
 				lit = true
 				log.Printf("paneld: %s (%s) live", node.Name, roleName(node.Role))
 			}

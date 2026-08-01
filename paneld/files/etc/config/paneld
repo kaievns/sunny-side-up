@@ -4,7 +4,8 @@
 # name      location shown top-left (e.g. 'kitchen', 'living room')
 # ip        node IP shown top-left
 # iface     interface for throughput (WAN for gateway, uplink for nodes)
-# wifiiface wifi interface for client counts (e.g. 'phy0-ap0'); blank if none
+# wifiiface wifi interface(s) for client counts, comma-separated for multi-BSS
+#           nodes (e.g. 'phy1-ap0,phy0-ap0,phy0-ap1'); blank if none
 # ping      latency target (public IP for gateway; the gateway IP for nodes)
 # hosts     homelab: comma-separated hosts to health-check (e.g. 'nas,cam-02')
 # rotate    panel rotation: 90 or 270 (whichever is upright in your enclosure)

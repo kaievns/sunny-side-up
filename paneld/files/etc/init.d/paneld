@@ -5,7 +5,10 @@
 #   service paneld start | stop | restart | status
 
 USE_PROCD=1
-START=95
+# Start early: paneld only needs USB + uci, and the sooner it runs, the sooner
+# the panel shows its boot splash instead of dead glass. Metric probes simply
+# read as down until the network is up.
+START=30
 STOP=10
 
 PROG=/usr/bin/paneld

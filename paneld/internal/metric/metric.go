@@ -120,7 +120,7 @@ func formatTemp(c float64) string {
 func linkSpeedLabel(mbps int) string {
 	switch {
 	case mbps >= 1000:
-		return "1G"
+		return fmt.Sprintf("%gG", float64(mbps)/1000) // 1G, 2.5G, 10G
 	case mbps > 0:
 		return fmt.Sprintf("%dM", mbps)
 	default:
