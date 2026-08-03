@@ -150,17 +150,22 @@ func readCPUTemp() float64 {
 }
 
 // readWifiTemp finds the wifi (mt76) hwmon sensor and returns °C.
+// A node can carry several radios (2.4 + 5 GHz, each its own hwmon); report
+// the hottest, since that's the one cooling has to answer for.
 func readWifiTemp() float64 {
 	hwmons, _ := filepath.Glob("/sys/class/hwmon/hwmon*")
+	hottest := math.NaN()
 	for _, h := range hwmons {
 		name := strings.ToLower(strings.TrimSpace(readString(h + "/name")))
 		if strings.Contains(name, "mt79") || strings.Contains(name, "mt76") {
 			if t := readMilliDeg(h + "/temp1_input"); !math.IsNaN(t) {
-				return t
+				if math.IsNaN(hottest) || t > hottest {
+					hottest = t
+				}
 			}
 		}
 	}
-	return math.NaN()
+	return hottest
 }
 
 func readUptime() int64 {

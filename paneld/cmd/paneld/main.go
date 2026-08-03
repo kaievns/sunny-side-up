@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
@@ -30,11 +31,13 @@ import (
 
 // fanOpts is the board revision plus everything fan/backlight control needs.
 type fanOpts struct {
-	v2   bool    // v2 board: ATtiny owns fan PWM + backlight over SPI
-	bl   byte    // v2 backlight brightness
-	onC  float64 // fan on at/above this SoC temp (hysteresis top)
-	offC float64 // fan off below this temp (hysteresis bottom)
-	maxC float64 // v2: temp of full fan duty (curve top)
+	v2    bool    // v2 board: ATtiny owns fan PWM + backlight over SPI
+	bl    byte    // v2 backlight brightness
+	onC   float64 // fan on at/above this SoC temp (hysteresis top)
+	offC  float64 // fan off below this temp (hysteresis bottom)
+	maxC  float64 // v2: temp of full fan duty (curve top)
+	floor byte    // v2: never drop below this duty - the fan always runs and
+	              // ramps floor->full across onC..maxC (0 = allow off)
 }
 
 // minDuty is the calibrated keep-spinning floor (also clamped in firmware):
@@ -44,7 +47,8 @@ const minDuty = 26
 func main() {
 	role := flag.String("role", "gateway", "node role: gateway | extender | homelab")
 	name := flag.String("name", "node", "location name shown in the top row")
-	ip := flag.String("ip", "", "node IP shown in the top row")
+	ip := flag.String("ip", "", "node IP shown in the top row ('auto' = read it off the LAN interface each refresh)")
+	lanIface := flag.String("lan-iface", "br-lan", "interface -ip auto reads the address from")
 	iface := flag.String("iface", "", "network interface for throughput (WAN for gateway, uplink for nodes)")
 	wifiIface := flag.String("wifiiface", "", "wifi interface(s) for client counts, comma-separated")
 	ping := flag.String("ping", "", "latency probe target (public IP for gateway, gateway IP for nodes)")
@@ -57,6 +61,7 @@ func main() {
 	fanOnC := flag.Float64("fan-on", 65, "turn the fan on at/above this temp (°C)")
 	fanOffC := flag.Float64("fan-off", 55, "turn the fan off below this temp (°C, hysteresis)")
 	fanMaxC := flag.Float64("fan-max", 75, "temp (°C) of full fan speed (v2 duty curve top)")
+	fanFloor := flag.Int("fan-floor", 0, "never run the fan below this duty percent (1-100); it then always spins and ramps to full by -fan-max. 0 = fan may switch off")
 	boardRev := flag.String("board", "v1", "panel board revision: v1 (GPIO fan gate) | v2 (ATtiny fan+BL)")
 	bl := flag.Int("bl", 200, "backlight brightness 0-255 (v2 boards)")
 
@@ -93,13 +98,24 @@ func main() {
 
 	cfg := panel.Config{ClockHz: *clockHz, LCD: lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}}
 	opts := fanOpts{v2: *boardRev == "v2", bl: byte(*bl), onC: *fanOnC, offC: *fanOffC, maxC: *fanMaxC}
+	if *fanFloor > 0 {
+		if *fanFloor > 100 {
+			*fanFloor = 100
+		}
+		opts.floor = byte(*fanFloor * 255 / 100)
+	}
 
-	if err := run(node, provider, cfg, *interval, opts); err != nil {
+	autoLan := ""
+	if strings.EqualFold(*ip, "auto") {
+		autoLan, node.IP = *lanIface, ""
+	}
+
+	if err := run(node, provider, cfg, *interval, opts, autoLan); err != nil {
 		log.Fatalf("paneld: %v", err)
 	}
 }
 
-func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval time.Duration, opts fanOpts) error {
+func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval time.Duration, opts fanOpts, autoLan string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -151,15 +167,19 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				return err
 			}
 
+			if autoLan != "" {
+				node.IP = detectIP(autoLan)
+			}
 			scr := metric.Build(node, sample)
 			scr.Clock = time.Now().Format("15:04")
 
 			if node.HasFan {
-				// The fan triggers on the SoC temperature. (The wifi module
-				// idles hotter and would dominate a max() rule; the fan cools
-				// the whole board regardless.) If the sensor read ever fails,
+				// The fan answers for the whole enclosure, so it tracks the
+				// hottest thing in it: the SoC, or the wifi silicon on nodes
+				// that have radios (those idle ~15C above the SoC, so they
+				// usually set the pace). If the sensors read nothing at all,
 				// fail safe: run the fan.
-				hot := sample.CPUTempC
+				hot := hottest(sample.CPUTempC, sample.WifiTempC)
 				if math.IsNaN(hot) {
 					fanOn = true
 				} else if !fanOn && hot >= opts.onC {
@@ -169,12 +189,17 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 				}
 				switch {
 				case opts.v2:
-					// Proportional duty on the v2 buck: the calibrated floor at
-					// the hysteresis point, full speed at maxC. Duty 0 also
-					// clears a latched STALL_FAULT in the firmware.
+					// Proportional duty on the v2 buck, ramping to full speed at
+					// maxC. With a floor configured the fan never stops and the
+					// ramp starts there; otherwise it switches off on the
+					// hysteresis and starts from the calibrated minimum. Duty 0
+					// also clears a latched STALL_FAULT in the firmware.
 					var duty byte
-					if fanOn {
-						duty = fanDuty(hot, opts.onC, opts.maxC)
+					switch {
+					case opts.floor > 0:
+						duty = fanDuty(hot, opts.onC, opts.maxC, opts.floor)
+					case fanOn:
+						duty = fanDuty(hot, opts.onC, opts.maxC, minDuty)
 					}
 					if err := tc.SetFanDuty(duty); err != nil {
 						return err
@@ -191,7 +216,7 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 					default:
 						scr.Fan = fmt.Sprintf("%d", rpm)
 					}
-				case fanOn:
+				case fanOn || opts.floor > 0: // v1 has no PWM: a floor just means always on
 					// MeasureTach powers the fan and reads real RPM - closed loop:
 					// if it's commanded on but not spinning, we can see it.
 					t, terr := p.Fan.MeasureTach(800 * time.Millisecond)
@@ -229,10 +254,67 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 	})
 }
 
-// fanDuty maps a SoC temperature onto the v2 fan curve: the calibrated
-// keep-spinning floor at onC, ramping linearly to full duty at maxC. An
-// unreadable sensor means full speed - same fail-safe stance as v1.
-func fanDuty(tempC, onC, maxC float64) byte {
+// detectIP returns the node's own IPv4 for the top row: the address on the LAN
+// interface if it has one, else the first global address on any interface.
+// Keeping this live means the panel follows a renumbered network instead of
+// showing a stale hand-configured address.
+func detectIP(lanIface string) string {
+	if ifi, err := net.InterfaceByName(lanIface); err == nil {
+		if s := firstIPv4(ifi); s != "" {
+			return s
+		}
+	}
+	ifis, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	for _, ifi := range ifis {
+		if ifi.Flags&net.FlagUp == 0 || ifi.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		if s := firstIPv4(&ifi); s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+func firstIPv4(ifi *net.Interface) string {
+	addrs, err := ifi.Addrs()
+	if err != nil {
+		return ""
+	}
+	for _, a := range addrs {
+		n, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		if v4 := n.IP.To4(); v4 != nil && v4.IsGlobalUnicast() {
+			return v4.String()
+		}
+	}
+	return ""
+}
+
+// hottest returns the highest of the readings, ignoring unavailable sensors
+// (NaN). It is NaN only when nothing could be read at all.
+func hottest(temps ...float64) float64 {
+	out := math.NaN()
+	for _, t := range temps {
+		if math.IsNaN(t) {
+			continue
+		}
+		if math.IsNaN(out) || t > out {
+			out = t
+		}
+	}
+	return out
+}
+
+// fanDuty maps a SoC temperature onto the v2 fan curve: floor duty at or below
+// onC, ramping linearly to full duty at maxC. An unreadable sensor means full
+// speed - same fail-safe stance as v1.
+func fanDuty(tempC, onC, maxC float64, floor byte) byte {
 	if math.IsNaN(tempC) {
 		return 255
 	}
@@ -242,7 +324,7 @@ func fanDuty(tempC, onC, maxC float64) byte {
 	} else if f > 1 {
 		f = 1
 	}
-	return byte(minDuty + f*(255-minDuty) + 0.5)
+	return byte(float64(floor) + f*(255-float64(floor)) + 0.5)
 }
 
 func parseRole(s string) ui.Role {

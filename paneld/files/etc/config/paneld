@@ -2,7 +2,9 @@
 #
 # role      gateway | extender | homelab
 # name      location shown top-left (e.g. 'kitchen', 'living room')
-# ip        node IP shown top-left
+# ip        node IP shown top-left; 'auto' reads it live off lan_iface, so a
+#           renumbered network updates itself instead of showing a stale value
+# lan_iface interface 'auto' reads the address from (default br-lan)
 # iface     interface for throughput (WAN for gateway, uplink for nodes)
 # wifiiface wifi interface(s) for client counts, comma-separated for multi-BSS
 #           nodes (e.g. 'phy1-ap0,phy0-ap0,phy0-ap1'); blank if none
@@ -19,12 +21,16 @@
 # fan_on: fan on at/above this °C; fan_off: off below this °C (hysteresis).
 # v2 boards run a duty curve between them: calibrated floor at fan_on,
 # full speed at fan_max. v1 fans are on/off only (chopping stalls them).
+# fan_floor duty percent (1-100) the fan never drops below - it then always
+#           spins, ramping from fan_floor to full between fan_on and fan_max.
+#           Use for weak fans (e.g. a 12V fan on the 5V rail, which tops out
+#           around 1650 rpm and needs to run continuously). 0 = may switch off.
 
 config paneld 'main'
 	option enabled '1'
 	option role 'gateway'
 	option name 'kitchen'
-	option ip '10.0.0.1'
+	option ip 'auto'
 	option iface 'eth1'
 	option wifiiface ''
 	option ping '1.1.1.1'

@@ -16,8 +16,8 @@ PROG=/usr/bin/paneld
 start_service() {
 	config_load paneld
 
-	local enabled role name ip iface wifiiface ping hosts rotate interval
-	local board bl clock fan_on fan_off fan_max
+	local enabled role name ip lan_iface iface wifiiface ping hosts rotate interval
+	local board bl clock fan_on fan_off fan_max fan_floor
 	local dhcp wifi fan invert bgr
 
 	config_get_bool enabled main enabled 1
@@ -26,6 +26,7 @@ start_service() {
 	config_get role      main role      gateway
 	config_get name      main name      node
 	config_get ip        main ip        ""
+	config_get lan_iface main lan_iface br-lan
 	config_get iface     main iface     ""
 	config_get wifiiface main wifiiface ""
 	config_get ping      main ping      ""
@@ -35,6 +36,7 @@ start_service() {
 	config_get fan_on    main fan_on    65
 	config_get fan_off   main fan_off   55
 	config_get fan_max   main fan_max   75
+	config_get fan_floor main fan_floor 0
 	config_get board     main board     v1
 	config_get bl        main bl        200
 	config_get clock     main clock     15000000
@@ -46,10 +48,11 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command "$PROG" \
-		-role "$role" -name "$name" -ip "$ip" \
+		-role "$role" -name "$name" -ip "$ip" -lan-iface "$lan_iface" \
 		-iface "$iface" -wifiiface "$wifiiface" -ping "$ping" \
 		-rotate "$rotate" -interval "$interval" \
 		-fan-on "$fan_on" -fan-off "$fan_off" -fan-max "$fan_max" \
+		-fan-floor "$fan_floor" \
 		-board "$board" -bl "$bl" -clock "$clock"
 	[ "$dhcp" = "1" ]   && procd_append_param command -dhcp
 	[ "$wifi" = "1" ]   && procd_append_param command -wifi

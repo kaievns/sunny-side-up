@@ -91,10 +91,15 @@ func formatUptime(sec int64) string {
 	}
 }
 
-// formatMbps renders a throughput value without a decimal point.
+// formatMbps renders a throughput value: one decimal below 10 Mb/s so a quiet
+// link still reads as moving (a rounded "0" looks like a dead interface), whole
+// numbers above - the hero digits stay big and legible either way.
 func formatMbps(v float64) string {
 	if v < 0 || math.IsNaN(v) {
 		return "0"
+	}
+	if v < 10 {
+		return fmt.Sprintf("%.1f", v)
 	}
 	return fmt.Sprintf("%.0f", v)
 }
