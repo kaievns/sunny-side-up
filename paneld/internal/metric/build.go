@@ -39,7 +39,7 @@ func Build(n Node, s Sample) ui.Screen {
 		CPU: formatTemp(s.CPUTempC),
 		Up:  formatUptime(s.UptimeSec),
 	}
-	if n.HasWifi {
+	if showWifi(n, s) {
 		scr.Wifi = formatTemp(s.WifiTempC)
 	}
 	// scr.Fan is set by the daemon, which owns fan control and knows the duty.
@@ -55,6 +55,15 @@ func Build(n Node, s Sample) ui.Screen {
 // assess derives the health state and the fault message, per role. (Healthy
 // nodes carry no phrase anymore - the interface indicators say it.)
 func assess(n Node, s Sample) (ui.Health, string) {
+	// A dead socket is the most actionable thing we can report, and it beats
+	// the probe to the answer - say so plainly instead of blaming the ISP.
+	if s.WanPortKnown && !s.WanPortUp {
+		if n.Role == ui.RoleGateway {
+			return ui.Down, "WAN cable unplugged"
+		}
+		return ui.Down, "uplink cable unplugged"
+	}
+
 	switch n.Role {
 	case ui.RoleGateway:
 		if !s.WANUp {
@@ -103,6 +112,13 @@ func assess(n Node, s Sample) (ui.Health, string) {
 	}
 }
 
+// showWifi reports whether this node's screen carries the wifi temperature and
+// the radio indicators: either the config says so, or - in auto mode - radios
+// were actually found on the box.
+func showWifi(n Node, s Sample) bool {
+	return n.HasWifi || (n.WifiAuto && s.HasRadios)
+}
+
 // ifaces builds the bottom-left indicator row: WAN · LAN · 5GHz · 2.4GHz,
 // with the design files' semantics (docs/design/): WAN = reachability of the
 // world (or the gateway); a LOST uplink takes WAN and LAN down together (the
@@ -130,9 +146,19 @@ func ifaces(n Node, s Sample) []ui.Iface {
 	if n.Role == ui.RoleHomelab && s.HostsTotal > 0 && s.HostsUp < s.HostsTotal {
 		lan = ui.Degraded
 	}
+	// An unplugged socket outranks all of that: it's the one thing these
+	// indicators can show that nothing else on the screen can, and carrier
+	// says so instantly where a probe has to time out first. Nodes with no
+	// LAN port, or a wireless uplink, simply don't report one.
+	if s.LanPorts > 0 && s.LanPortsUp == 0 {
+		lan = ui.Down
+	}
+	if s.WanPortKnown && !s.WanPortUp {
+		wan = ui.Down
+	}
 
 	out := []ui.Iface{{Label: "WAN", State: wan}, {Label: "LAN", State: lan}}
-	if n.HasWifi {
+	if showWifi(n, s) {
 		radio := ui.OK
 		if math.IsNaN(s.WifiTempC) {
 			radio = ui.Down
@@ -191,7 +217,7 @@ func overTemp(n Node, s Sample) bool {
 	if !math.IsNaN(s.CPUTempC) && s.CPUTempC > n.TempWarnC {
 		return true
 	}
-	if n.HasWifi && !math.IsNaN(s.WifiTempC) && s.WifiTempC > n.TempWarnC {
+	if !math.IsNaN(s.WifiTempC) && s.WifiTempC > n.TempWarnC {
 		return true
 	}
 	return false

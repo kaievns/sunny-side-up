@@ -26,6 +26,10 @@ type LocalProvider struct {
 	lastTx   uint64
 	lastAt   time.Time
 	haveLast bool
+
+	// lanSeen remembers which LAN ports have ever had a cable, so an unused
+	// socket never raises a fault (see lanLink).
+	lanSeen map[string]bool
 }
 
 // NewLocalProvider returns a collector for the given node.
@@ -45,7 +49,11 @@ func (p *LocalProvider) Read(ctx context.Context) (Sample, error) {
 		UptimeSec: readUptime(),
 		LinkMbps:  readLinkSpeed(n.Iface),
 	}
-	if n.HasWifi {
+	radios := wifiIfaces()
+	s.HasRadios = len(radios) > 0
+	s.LanPorts, s.LanPortsUp = p.lanLink(n.Iface)
+	s.WanPortKnown, s.WanPortUp = portCarrier(n.Iface)
+	if n.HasWifi || (n.WifiAuto && s.HasRadios) {
 		s.WifiTempC = readWifiTemp()
 	}
 
@@ -108,22 +116,112 @@ func (p *LocalProvider) clients() int {
 		}
 		return countLines(b) // one active lease per line
 	}
-	if p.node.WifiIface != "" {
-		// One AP node can run several BSS ifaces (bands / SSIDs) - sum the
-		// associated stations across the comma-separated list.
-		n := 0
-		for _, ifc := range strings.Split(p.node.WifiIface, ",") {
-			if ifc = strings.TrimSpace(ifc); ifc == "" {
-				continue
-			}
-			out, err := run(context.Background(), "iw", "dev", ifc, "station", "dump")
-			if err == nil {
-				n += strings.Count(out, "Station ")
-			}
-		}
-		return n
+	// One AP node can run several BSS ifaces (bands / SSIDs) - sum the
+	// associated stations across all of them. The list is configured, or
+	// discovered from the wireless interfaces present.
+	ifaces := strings.Split(p.node.WifiIface, ",")
+	if p.node.WifiIface == "" && p.node.WifiAuto {
+		ifaces = wifiIfaces()
 	}
-	return 0
+	n := 0
+	for _, ifc := range ifaces {
+		if ifc = strings.TrimSpace(ifc); ifc == "" {
+			continue
+		}
+		out, err := run(context.Background(), "iw", "dev", ifc, "station", "dump")
+		if err == nil {
+			n += strings.Count(out, "Station ")
+		}
+	}
+	return n
+}
+
+// lanLink counts the node's LAN ethernet ports and how many have a cable in.
+// "LAN" is every physical ethernet port except the one carrying the uplink, so
+// a VLAN uplink (eth1.30) correctly excludes its parent (eth1). Wireless and
+// virtual interfaces are skipped deliberately: a LAN bridge reports carrier
+// while only a wifi client is associated, which would mask an unplugged cable.
+//
+// Only ports seen connected at least once are counted. This is cable in/OUT
+// detection: a socket that has never had anything in it - the spare port on a
+// wireless extender, say - is not a fault, and lighting it red permanently
+// would just teach us to ignore the indicator.
+func (p *LocalProvider) lanLink(uplink string) (ports, up int) {
+	skip := basePort(uplink)
+	ms, _ := filepath.Glob("/sys/class/net/*/device")
+	for _, m := range ms {
+		name := filepath.Base(filepath.Dir(m))
+		dir := "/sys/class/net/" + name
+		if _, err := os.Stat(dir + "/phy80211"); err == nil {
+			continue // a radio, not a socket
+		}
+		if name == skip {
+			continue
+		}
+		live := strings.TrimSpace(readString(dir+"/carrier")) == "1"
+		if live {
+			if p.lanSeen == nil {
+				p.lanSeen = map[string]bool{}
+			}
+			p.lanSeen[name] = true
+		}
+		if !p.lanSeen[name] {
+			continue // never used; nothing to miss
+		}
+		ports++
+		if live {
+			up++
+		}
+	}
+	return ports, up
+}
+
+// portCarrier reports the cable state of the physical port carrying iface.
+// known is false when there is no cable to speak of - a wireless uplink, or a
+// purely virtual interface - so callers can leave the indicator alone rather
+// than inventing a fault.
+func portCarrier(iface string) (known, up bool) {
+	base := basePort(iface)
+	if base == "" {
+		return false, false
+	}
+	dir := "/sys/class/net/" + base
+	if _, err := os.Stat(dir + "/device"); err != nil {
+		return false, false // virtual: no socket behind it
+	}
+	if _, err := os.Stat(dir + "/phy80211"); err == nil {
+		return false, false // uplink is a radio, not a cable
+	}
+	return true, strings.TrimSpace(readString(dir+"/carrier")) == "1"
+}
+
+// basePort resolves an interface down to the physical port beneath it
+// (eth1.30 -> eth1, br-lan -> eth0) so stacked names can be compared with the
+// real ports.
+func basePort(iface string) string {
+	for i := 0; i < 4 && iface != ""; i++ {
+		dir := "/sys/class/net/" + iface
+		if _, err := os.Stat(dir + "/device"); err == nil {
+			return iface
+		}
+		lowers, _ := filepath.Glob(dir + "/lower_*")
+		if len(lowers) == 0 {
+			return iface
+		}
+		iface = strings.TrimPrefix(filepath.Base(lowers[0]), "lower_")
+	}
+	return iface
+}
+
+// wifiIfaces lists the node's wireless netdevs (those with a phy80211 link).
+// Non-AP interfaces simply report no stations, so they are harmless to include.
+func wifiIfaces() []string {
+	ms, _ := filepath.Glob("/sys/class/net/*/phy80211")
+	out := make([]string, 0, len(ms))
+	for _, m := range ms {
+		out = append(out, filepath.Base(filepath.Dir(m)))
+	}
+	return out
 }
 
 // --- kernel/sysfs collectors -------------------------------------------------

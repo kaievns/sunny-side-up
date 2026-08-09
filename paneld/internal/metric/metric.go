@@ -22,9 +22,9 @@ import (
 // Node is the static configuration of the router this daemon runs on: what it
 // is, and where to read its metrics from.
 type Node struct {
-	Role     ui.Role
-	Name     string // "kitchen", "living room"
-	IP       string // shown in the top row
+	Role ui.Role
+	Name string // "kitchen", "living room"
+	IP   string // shown in the top row
 
 	Iface      string   // network interface to measure throughput on (WAN for gateway, uplink for nodes)
 	WifiIface  string   // wifi interface for associated-client counts ("" if none)
@@ -33,8 +33,13 @@ type Node struct {
 	PingLabel  string   // how the aux label frames the target: "dns 4.2 · loss 0%" vs "→ gateway · 1G"
 	Hosts      []string // homelab hosts to health-check (empty for non-homelab)
 
-	HasWifi bool // has a wifi module (shows wifi temp)
-	HasFan  bool // has the fan board (shows fan rpm)
+	HasWifi bool // has a wifi module (shows wifi temp + radio indicators)
+
+	// WifiAuto asks the provider to work out HasWifi and WifiIface from the
+	// system on every read, so a node that gains (or loses) radios after the
+	// daemon started reflects that without a config edit or restart.
+	WifiAuto bool
+	HasFan   bool // has the fan board (shows fan rpm)
 
 	// Health thresholds.
 	PingWarnMs float64 // latency above this = degraded (e.g. 80 for ISP, 15 for a wired uplink)
@@ -54,8 +59,15 @@ type Sample struct {
 	DNSMs    float64 // gateway: DNS resolution time, NaN if n/a
 	LossPct  float64 // gateway: packet loss %, NaN if n/a
 
+	LanPorts   int // physical LAN ethernet ports (excludes the uplink's own port)
+	LanPortsUp int // how many of them have a cable plugged in (carrier)
+
+	WanPortKnown bool // the uplink runs over a physical port whose cable we can see
+	WanPortUp    bool // that port has a cable in it
+
 	CPUTempC  float64 // NaN if unknown
 	WifiTempC float64 // NaN if none
+	HasRadios bool    // wireless interfaces were present at sample time
 	FanRPM    int     // -1 if no fan / not measured
 
 	UptimeSec int64

@@ -7,11 +7,14 @@
 # lan_iface interface 'auto' reads the address from (default br-lan)
 # iface     interface for throughput (WAN for gateway, uplink for nodes)
 # wifiiface wifi interface(s) for client counts, comma-separated for multi-BSS
-#           nodes (e.g. 'phy1-ap0,phy0-ap0,phy0-ap1'); blank if none
+#           nodes (e.g. 'phy1-ap0,phy0-ap0,phy0-ap1'); blank discovers them
 # ping      latency target (public IP for gateway; the gateway IP for nodes)
 # hosts     homelab: comma-separated hosts to health-check (e.g. 'nas,cam-02')
 # rotate    panel rotation: 90 or 270 (whichever is upright in your enclosure)
-# dhcp/wifi/fan/invert/bgr  1 to enable, 0 to disable
+# dhcp/fan/invert/bgr  1 to enable, 0 to disable
+# wifi      'auto' (default) shows the wifi temp and 5GHz/2.4GHz indicators only
+#           on boxes that actually have radios, and picks them up when they are
+#           configured later; 1 forces them on, 0 off
 # board     v1 (GPIO fan gate, on/off fan) | v2 (ATtiny fan PWM + backlight)
 # bl        v2 backlight brightness 0-255
 # clock     SPI clock in Hz. 15000000 when the USB cabling is clean; drop to
@@ -23,8 +26,11 @@
 # full speed at fan_max. v1 fans are on/off only (chopping stalls them).
 # fan_floor duty percent (1-100) the fan never drops below - it then always
 #           spins, ramping from fan_floor to full between fan_on and fan_max.
-#           Use for weak fans (e.g. a 12V fan on the 5V rail, which tops out
-#           around 1650 rpm and needs to run continuously). 0 = may switch off.
+#           'auto' (default) identifies the fitted fan at startup by spinning it
+#           up and reading the tach: a 5V fan (~4400 rpm) gets the plain
+#           temperature curve and may switch off, while a 12V fan on the 5V rail
+#           (~1650 rpm, near-flat duty response) is held at 50% continuously
+#           since throttling it achieves nothing. 0 = always allow the fan off.
 
 config paneld 'main'
 	option enabled '1'
@@ -38,7 +44,7 @@ config paneld 'main'
 	option rotate '90'
 	option interval '2s'
 	option dhcp '1'
-	option wifi '1'
+	option wifi 'auto'
 	option fan '1'
 	option invert '0'
 	option bgr '0'

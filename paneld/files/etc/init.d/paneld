@@ -36,12 +36,12 @@ start_service() {
 	config_get fan_on    main fan_on    65
 	config_get fan_off   main fan_off   55
 	config_get fan_max   main fan_max   75
-	config_get fan_floor main fan_floor 0
+	config_get fan_floor main fan_floor auto
 	config_get board     main board     v1
 	config_get bl        main bl        200
 	config_get clock     main clock     15000000
 	config_get_bool dhcp   main dhcp   0
-	config_get_bool wifi   main wifi   0
+	config_get wifi        main wifi   auto
 	config_get_bool fan    main fan    0
 	config_get_bool invert main invert 0
 	config_get_bool bgr    main bgr    0
@@ -52,10 +52,9 @@ start_service() {
 		-iface "$iface" -wifiiface "$wifiiface" -ping "$ping" \
 		-rotate "$rotate" -interval "$interval" \
 		-fan-on "$fan_on" -fan-off "$fan_off" -fan-max "$fan_max" \
-		-fan-floor "$fan_floor" \
+		-fan-floor "$fan_floor" -wifi "$wifi" \
 		-board "$board" -bl "$bl" -clock "$clock"
 	[ "$dhcp" = "1" ]   && procd_append_param command -dhcp
-	[ "$wifi" = "1" ]   && procd_append_param command -wifi
 	[ "$fan" = "1" ]    && procd_append_param command -fan
 	[ "$invert" = "1" ] && procd_append_param command -invert
 	[ "$bgr" = "1" ]    && procd_append_param command -bgr

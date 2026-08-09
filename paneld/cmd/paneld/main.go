@@ -18,6 +18,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -37,7 +38,50 @@ type fanOpts struct {
 	offC  float64 // fan off below this temp (hysteresis bottom)
 	maxC  float64 // v2: temp of full fan duty (curve top)
 	floor byte    // v2: never drop below this duty - the fan always runs and
-	              // ramps floor->full across onC..maxC (0 = allow off)
+	// ramps floor->full across onC..maxC (0 = allow off)
+	floorAuto bool // v2: pick floor by probing what fan is actually fitted
+}
+
+// Fan classification. The project's boards get whichever 4010 fan came to hand,
+// and a 12V fan on the 5V rail behaves nothing like a 5V one: it tops out around
+// 1650 rpm (vs ~4400) and its whole duty range spans barely 300 rpm, so throttling
+// it is pointless - it simply has to run continuously to move any air. Peak RPM
+// tells the two apart with a wide margin, so the daemon probes at startup instead
+// of relying on someone to configure it per box.
+const (
+	probeDuty    = 255             // full tilt: fastest spin-up, widest separation
+	probeSettle  = 3 * time.Second // spin-up + tach averaging window
+	strongFanRPM = 2500            // above this at full duty = healthy 5V fan
+	spinningRPM  = 500             // below this, nothing is turning
+	weakFanFloor = byte(127)       // 50%: keep a weak fan running always
+)
+
+// probeFanFloor spins the fan up, reads what it can actually do, and returns the
+// duty floor to hold it at: none for a strong fan (it can idle off and ramp on
+// demand), a continuous 50% for a weak one. An unreadable or stalled fan gets
+// the cautious answer - keep air moving.
+func probeFanFloor(tc *tiny.Client) byte {
+	if err := tc.SetFanDuty(probeDuty); err != nil {
+		log.Printf("fan probe: %v - assuming a weak fan", err)
+		return weakFanFloor
+	}
+	time.Sleep(probeSettle)
+	rpm, _, err := tc.Status()
+	if err != nil {
+		log.Printf("fan probe: %v - assuming a weak fan", err)
+		return weakFanFloor
+	}
+	switch {
+	case rpm >= strongFanRPM:
+		log.Printf("fan probe: %d rpm at full duty - 5V fan, using the temperature curve", rpm)
+		return 0
+	case rpm >= spinningRPM:
+		log.Printf("fan probe: %d rpm at full duty - weak (12V-on-5V) fan, holding it at 50%%", rpm)
+		return weakFanFloor
+	default:
+		log.Printf("fan probe: %d rpm at full duty - no fan detected or stalled; holding 50%% in case", rpm)
+		return weakFanFloor
+	}
 }
 
 // minDuty is the calibrated keep-spinning floor (also clamped in firmware):
@@ -54,14 +98,14 @@ func main() {
 	ping := flag.String("ping", "", "latency probe target (public IP for gateway, gateway IP for nodes)")
 	dhcp := flag.Bool("dhcp", false, "count DHCP leases as clients (gateway)")
 	hosts := flag.String("hosts", "", "comma-separated homelab hosts to health-check")
-	hasWifi := flag.Bool("wifi", false, "node has a wifi module (show wifi temp)")
+	hasWifi := flag.String("wifi", "auto", "node has a wifi module - shows its temp and the radio indicators. 'auto' follows whatever radios the box actually has; true/false force it")
 	hasFan := flag.Bool("fan", false, "node has the fan board (control + show fan)")
 	pingWarn := flag.Float64("ping-warn", 0, "latency (ms) above which the node is degraded (0 = role default)")
 	tempWarn := flag.Float64("temp-warn", 80, "temperature (°C) above which the node is degraded")
 	fanOnC := flag.Float64("fan-on", 65, "turn the fan on at/above this temp (°C)")
 	fanOffC := flag.Float64("fan-off", 55, "turn the fan off below this temp (°C, hysteresis)")
 	fanMaxC := flag.Float64("fan-max", 75, "temp (°C) of full fan speed (v2 duty curve top)")
-	fanFloor := flag.Int("fan-floor", 0, "never run the fan below this duty percent (1-100); it then always spins and ramps to full by -fan-max. 0 = fan may switch off")
+	fanFloor := flag.String("fan-floor", "auto", "duty percent (1-100) the fan never drops below - it then always spins and ramps to full by -fan-max. 'auto' probes the fitted fan at startup and holds a weak one at 50%; '0' always allows the fan to switch off")
 	boardRev := flag.String("board", "v1", "panel board revision: v1 (GPIO fan gate) | v2 (ATtiny fan+BL)")
 	bl := flag.Int("bl", 200, "backlight brightness 0-255 (v2 boards)")
 
@@ -82,7 +126,8 @@ func main() {
 		DHCPLeases: *dhcp,
 		PingTarget: *ping,
 		Hosts:      splitHosts(*hosts),
-		HasWifi:    *hasWifi,
+		HasWifi:    strings.EqualFold(*hasWifi, "true") || *hasWifi == "1",
+		WifiAuto:   strings.EqualFold(*hasWifi, "auto"),
 		HasFan:     *hasFan,
 		PingWarnMs: *pingWarn,
 		TempWarnC:  *tempWarn,
@@ -98,11 +143,15 @@ func main() {
 
 	cfg := panel.Config{ClockHz: *clockHz, LCD: lcd.Options{Rotation: *rotate, Invert: *invert, BGR: *bgr}}
 	opts := fanOpts{v2: *boardRev == "v2", bl: byte(*bl), onC: *fanOnC, offC: *fanOffC, maxC: *fanMaxC}
-	if *fanFloor > 0 {
-		if *fanFloor > 100 {
-			*fanFloor = 100
+	if strings.EqualFold(*fanFloor, "auto") {
+		opts.floorAuto = true
+	} else if pct, err := strconv.Atoi(*fanFloor); err != nil {
+		log.Fatalf("paneld: bad -fan-floor %q: want 'auto' or 0-100", *fanFloor)
+	} else if pct > 0 {
+		if pct > 100 {
+			pct = 100
 		}
-		opts.floor = byte(*fanFloor * 255 / 100)
+		opts.floor = byte(pct * 255 / 100)
 	}
 
 	autoLan := ""
@@ -138,6 +187,9 @@ func run(node metric.Node, provider metric.Provider, cfg panel.Config, interval 
 			tc = tiny.New(p.Device(), cfg.ClockHz)
 			if _, _, err := tc.Ping(); err != nil {
 				return fmt.Errorf("v2 board: ATtiny not answering: %w", err)
+			}
+			if node.HasFan && opts.floorAuto {
+				opts.floor = probeFanFloor(tc) // doubles as a fan health check
 			}
 		}
 
@@ -365,4 +417,3 @@ func splitHosts(s string) []string {
 	}
 	return out
 }
-
